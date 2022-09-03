@@ -1,0 +1,64 @@
+# docker compose version
+version: "3.8"
+
+# child of services are the containers
+services:
+  mongodb:
+    image: "mongo"
+    volumes:
+      # named volume
+      - data:/data/db
+    # container name
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: lowjiewei
+      MONGO_INITDB_ROOT_PASSWORD: secret
+      # - MONGO_INITDB_ROOT_USERNAME=lowjiewei
+      # if you want to use environment variables instead
+    # env_file:
+    #   - ./env/mongo.env
+    # not necessary to create a network because docker-compose creates
+    # a network automatically.
+    # networks:
+    #   - goals-net
+
+  backend:
+    # build the image
+    build: ./backend
+    # another way to build image
+    # build:
+    #   context: ./backend
+    #   dockerfile: Dockerfile
+    #   args:
+    #     some-arg: 1
+    ports:
+      - "80:80"
+    volumes:
+      - logs:/app/logs
+      # bind the volume (relative path) to the container /app
+      - ./backend:/app
+      - /app/node_modules
+    env_file:
+      - ./env/backend.env
+    # backend can only run after mongodb is running (service name aka container)
+    depends_on:
+      - mongodb
+
+  frontend:
+    # build the image
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      # bind mount
+      - ./frontend/src:/app/src
+    # interactive mode (-it)
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+
+# syntax for named volumes
+volumes:
+  data:
+  logs:
