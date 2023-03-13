@@ -62,3 +62,41 @@ docker start -a <container_id>
   - Any data or state that was not saved before the container was killed will be lost.
 - Recommended to use `docker stop` first then `docker kill` (if container does not respond).
 
+## Multi-Command Container
+
+- Starting a second command inside a running container
+- `docker exec -it <container_id> <command>`
+  - `exec`: run another command
+  - `-it`: allow us to provide input to the container
+  - `<command>`: command to execute
+
+```
+docker run redis // running copy of redis-server in container
+docker exec -it <container_id> redis-cli
+
+docker exec -i -t <container_id> redis-cli // similar way of running 
+```
+
+- `-i`: directed to std-in of redis-cli
+- `-t`: for formatting
+
+## Getting a Command Prompt to a Container
+
+- `docker exec -it <container_id> sh`
+  - `sh`: program executed inside the container.
+  - Other command processors: bash, powershell, zsh
+- can run things like `ls`, `echo`, `cd`
+
+```
+docker exec -it 5f7fb7599f16 sh
+```
+
+- `docker run -it busybox sh`
+  - starting up container with an attached running shell like `sh`
+  - can interact with the container's filesystem and environment.
+- To exit from shell inside container: CTRL + D or type "exit"
+
+## Container Isolation
+
+- Containers are isolated from each other. They do not share their file system.
+- No sharing of data between the containers.
