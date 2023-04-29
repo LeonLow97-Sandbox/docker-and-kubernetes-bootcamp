@@ -3,7 +3,9 @@
 ## Creating our own Image
 
 1. Dockerfile
-  - Configuration to define how our container should behave.
+
+- Configuration to define how our container should behave.
+
 2. Docker Client
 3. Docker Server
 4. Usable Image
@@ -18,6 +20,7 @@
 1. Specify a base image
 2. Run some commands to install additional programs
 3. Specify a command to run on container startup
+
 - To run Dockerfile, `docker build .`
 
 ```go

@@ -20,6 +20,8 @@
 - **Docker Client (Docker CLI)**: Tool that we are going to issue commands to
 - **Docker Server (Docker Daemon)**: Tool that is responsible for creating images, running containers, etc.
 
+<img src="./pics/docker-architecture.svg" />
+
 ## Basic Commands
 
 ```docker
@@ -41,8 +43,8 @@ docker version
 ## Image and Container In-Depth
 
 - A container is a set of isolated processes and resources.
-- An image is a read-only template for creating containers.
-- When you start a container based on an image, a new writable layer is added on top of the image's read-only filesystem to serve as the container's working directory.
+- An **image is a read-only template** for creating containers.
+- When you start a **container** based on an image, a new **writable layer is added on top of the image's read-only filesystem** to serve as the container's working directory.
 - The container inherits the kernel resources of the host operating system, which are shared among all containers running on the same host.
 - Image is like a file system snapshot.
   1. Kernel allocates a section of the hard drive to the container.
@@ -50,7 +52,7 @@ docker version
 
 ## How is Docker Running on your computer?
 
-- When Docker is installed, Docker installs a small Linux virtual machine called the Docker Engine on the host machine.
+- When Docker is installed on Windows or macOS, Docker installs a small Linux virtual machine called the Docker Engine on the host machine.
 - The Docker Engine is responsible for managing the containers and uses features of the Linux kernel such as namespaces and control groups to isolate the containers from the host and from each other.
 - The Linux kernel limits access to different hardware resources on your computer.
 - By running `docker version`, we see that the OS is the Linux kernel being used by Docker Engine, and not necessarily the same Linux distribution that is running on the host machine.
