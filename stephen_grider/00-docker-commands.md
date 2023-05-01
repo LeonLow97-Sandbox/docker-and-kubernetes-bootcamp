@@ -25,6 +25,7 @@
 |`docker kill <container>`|Sends a SIGKILL signal to the container, immediately stopping it without allowing it to perform any cleanup. This can result in data loss or other issues, so it should be used with caution.|
 |`docker exec <container> <command>`|Runs a command in a running container. Command can be bash script, powershell, or other commands like ls, cd, or echo.|
 |`docker exec -it <container> <command>`|Runs an **interactive shell` in a running container.|
+|`docker run -it alpine sh`|Starts up a container inside shell.|
 
 ## Docker Images
 

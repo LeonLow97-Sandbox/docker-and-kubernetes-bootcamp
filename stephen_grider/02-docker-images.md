@@ -78,3 +78,12 @@ CMD ["redis-server"]
   - Version (tag): `latest`
 - `docker run leon/redis` or `docker run leon/redis:latest`
 
+## Manual Image Generation with `docker commit`
+
+- Purpose: To create a container, added a dependency to the container, set up the default command, and generate an image out of that.
+- (Not recommended, just for learning) Use Dockerfile instead.
+- Steps:
+  1. `docker run -it alpine sh`
+  2. `apk add --update redis`
+  3. `docker ps` (in another CLI)
+  4. `docker run <container_id>`
