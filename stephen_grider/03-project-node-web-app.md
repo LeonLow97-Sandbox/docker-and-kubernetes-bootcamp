@@ -37,3 +37,28 @@
     ```
     - Creating working directory of the container
         - `WORKDIR /usr/app`
+
+## Running `npm install` due to small changes.
+
+```dockerfile
+# Copy build files into the Docker container
+COPY ./ ./
+
+# install dependencies into node_modules
+RUN npm install
+```
+
+- When the code in index.js changes, the npm install command is ran to install the node_modules again. Thus, `npm install` is always going to run whenever we make a small change (time-consuming and unnecessary).
+
+```dockerfile
+# Solution
+# Copy package.json into the curernt working directory of the contianer
+COPY ./package.json ./
+
+# install dependencies into node_modules (runs only if the previous steps changes)
+RUN npm install
+
+# copy over everything else (index.js)
+COPY ./ ./
+```
+
