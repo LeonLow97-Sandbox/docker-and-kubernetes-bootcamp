@@ -10,3 +10,12 @@ services:
     volumes:
       - /app/node_modules
       - .:/app # $(pwd):/app
+  # 2nd service for test
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - /app/node_modules
+      - .:/app
+    command: ["npm", "run", "test"]

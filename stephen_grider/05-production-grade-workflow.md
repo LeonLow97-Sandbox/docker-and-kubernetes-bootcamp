@@ -52,3 +52,12 @@
     - `$(pwd):/app`: take the present working directory of the local machine and map over to `/app` on Docker container. The colon `:` is used when we want to map folders between host and container.
 - Changes are automatically reflected when we make changes in our local files which are propagated to the running container, and the container reflects the change by updating the page.
 
+## Docker test in -it mode
+
+- `docker run -it <image> npm run test`
+- 1st Solution:
+    - `docker-compose up`
+    - On another cmd, `docker exec -it <image> npm run test`
+- 2nd Solution:
+    - using `docker-compose.yml` and `docker-compose up`. (unable to interact with npm run test CLI)
+    - use `docker attach <container>`: attach to a running container and view the container's standard input (**stdin**), standard output (**stdout**), and standard error (**stderr**) streams.
