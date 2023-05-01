@@ -80,4 +80,6 @@
         - Use nginx
         - Copy over the result of `npm run build`
         - Start nginx
-
+- After creating the Dockerfile, run `docker run -p 8080:80 <image>`
+    - nginx port: 80
+    - Running the application on nginx server
