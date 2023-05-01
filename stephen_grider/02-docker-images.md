@@ -70,3 +70,11 @@ CMD ["redis-server"]
   - Get image ready for next instruction.
 - Output is the image generated from the previous step.
 
+## Adding a tag to the image
+
+- `docker build -t leon/redis:latest .`
+  - Docker ID: `leon`
+  - Repo/Project name: `redis`
+  - Version (tag): `latest`
+- `docker run leon/redis` or `docker run leon/redis:latest`
+
