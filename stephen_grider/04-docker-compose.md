@@ -37,3 +37,16 @@ Creating network "visits_default" with the default driver
 Creating visits_node-app_1     ... done
 Creating visits_redis-server_1 ... done
 ```
+
+## Restarting container when it crashes
+
+- When container crashes and stops, docker-compose can restart the container.
+- `restart: always`
+
+|Restart Policies|Description|
+|:-:|:-:|
+|`"no"`|Never attempt to restart this container if it stops or crashes.|
+|`always`|If this container stops _for any reason_, always attempt to restart it.|
+|`on-failure`|Only restart if the container stop with an error code (other than 0).|
+|`unless-stopped`|Always restart unless we (the developers) forcibly stop it.|
+

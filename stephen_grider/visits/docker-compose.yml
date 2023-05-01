@@ -4,7 +4,8 @@ services:
   redis-server:
     image: "redis"
   node-app:
+    restart: "no"
     build: . # look into current directory for the Dockerfile
     ports:
       - "4001:8081" # dash '-' to create array
-      
+
