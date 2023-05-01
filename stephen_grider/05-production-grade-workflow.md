@@ -61,3 +61,23 @@
 - 2nd Solution:
     - using `docker-compose.yml` and `docker-compose up`. (unable to interact with npm run test CLI)
     - use `docker attach <container>`: attach to a running container and view the container's standard input (**stdin**), standard output (**stdout**), and standard error (**stderr**) streams.
+
+## Production Environment
+
+- In development, we use a development server. However, in production, we cannot rely on localhost and we need to deploy the application on production server that is accessible from the Internet and can handle incoming requests.
+- `nginx`: Production server of for web applications.
+    - Create a Docker image of your application.
+    - Run it as a container on a production server with `nginx` configured as a reverse proxy.
+    - Incoming requests are first handled by `nginx`, which can then pass them on to the backend application server as needed.
+- Steps to build production environment
+    - Build Phase
+        1. Use node:alpine
+        2. Copy the package.json file
+        3. Install dependencies
+        4. Run `npm run build`
+    - Run Phase
+    5. Start nginx
+        - Use nginx
+        - Copy over the result of `npm run build`
+        - Start nginx
+
