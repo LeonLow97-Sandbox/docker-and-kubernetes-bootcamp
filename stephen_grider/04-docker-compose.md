@@ -50,3 +50,8 @@ Creating visits_redis-server_1 ... done
 |`on-failure`|Only restart if the container stop with an error code (other than 0).|
 |`unless-stopped`|Always restart unless we (the developers) forcibly stop it.|
 
+## Container Status with Docker Compose
+
+- Ensure the command is ran in the directory with the `docker-compose.yml` file.
+- `docker-compose ps`
+    - Check what containers are up and running.
