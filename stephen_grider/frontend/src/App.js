@@ -15,7 +15,7 @@ function App() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Hello Leon :D
+          Testing Docker Compose Up
         </a>
       </header>
     </div>
