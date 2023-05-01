@@ -76,7 +76,10 @@ CMD ["redis-server"]
   - Docker ID: `leon`
   - Repo/Project name: `redis`
   - Version (tag): `latest`
-- `docker run leon/redis` or `docker run leon/redis:latest`
+- `docker run leon/redis`
+  - will become `leon/redis:latest` if tag not specified.
+-  `docker run leon/redis:latest`
+  - same thing as previous
 
 ## Manual Image Generation with `docker commit`
 
