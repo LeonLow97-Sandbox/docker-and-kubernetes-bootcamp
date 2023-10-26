@@ -1,0 +1,12 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  # naming our image as `leonlow/docker-react`
+  - docker build -t leonlow/docker-react -f Dockerfile.dev .
+
+script:
+  # added `-e CI=true` to exit npm run test when test suite is done
+  # let the test exit with status code 0
+  - docker run -e CI=true leonlow/docker-react npm run test

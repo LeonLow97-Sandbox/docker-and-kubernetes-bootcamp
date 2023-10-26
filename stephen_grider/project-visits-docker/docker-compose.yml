@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  redis-server:
+    image: 'redis'
+
+  node-app:
+    restart: always
+    build: . # built with image using Dockerfile in current working directory
+    ports:
+      - '4001:8081' # `-` to define an array in yaml file
