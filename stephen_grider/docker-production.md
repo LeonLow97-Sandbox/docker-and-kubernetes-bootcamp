@@ -190,6 +190,7 @@ services:
   - Rename the development compose config file from docker-compose.yml to docker-compose-dev.yml.
     - Need to pass a flag to specify which compose file you want to build and run from:
     ```
+    # `-f` flag is used to specify the name and location of the Dockerfile to use for building an image.
     docker-compose -f docker-compose-dev.yml up
     docker-compose -f docker-compose-dev.yml up --build
     docker-compose -f docker-compose-dev.yml down
@@ -215,3 +216,10 @@ services:
 - When we host our application on AWS Environment with Elastic Beanstalk, there is a Load Balancer already created for us in the AWS Environment.
 - Load Balancer routes incoming requests to the Virtual Machine running docker. In the Docker container, our application is running inside the docker container.
 - As more traffic comes in and reaches the limit, AWS Elastic Beanstalk adds more Virtual Machines running docker to handle that traffic.
+
+### Single Container Deployment Issues
+
+- The app was simple - no outside dependencies
+- Image was built multiple times and built on our application
+- How do we connect to a database from a container?
+
