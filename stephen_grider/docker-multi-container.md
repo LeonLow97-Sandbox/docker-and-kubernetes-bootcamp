@@ -19,3 +19,6 @@
 2. Run `npm install`
 3. Copy over everything else
 4. Docker compose should set up a volume to 'share' files.
+
+- Run `docker build -f Dockerfile.dev .` to build image and retrieve image_id
+- `docker run <image_id>`
