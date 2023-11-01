@@ -170,6 +170,8 @@ services:
 
 ### Services Used
 
+<img src="./diagrams/docker-deploy-to-aws.png" />
+
 - GitHub, Travis CI, AWS
 - Git Repository
   - `git add` + `git commit`
@@ -205,3 +207,11 @@ services:
           - '80:80'
     ```
     - AWS ElasticBeanstalk will see a file named docker-compose.yml and use it to build the single container application.
+
+### Elastic Beanstalk
+
+<img src="./diagrams/docker-33.png" />
+
+- When we host our application on AWS Environment with Elastic Beanstalk, there is a Load Balancer already created for us in the AWS Environment.
+- Load Balancer routes incoming requests to the Virtual Machine running docker. In the Docker container, our application is running inside the docker container.
+- As more traffic comes in and reaches the limit, AWS Elastic Beanstalk adds more Virtual Machines running docker to handle that traffic.

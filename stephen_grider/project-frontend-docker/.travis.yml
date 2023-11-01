@@ -10,3 +10,19 @@ script:
   # added `-e CI=true` to exit npm run test when test suite is done
   # let the test exit with status code 0
   - docker run -e CI=true leonlow/docker-react npm run test
+
+deploy:
+  # add configuration tell travis ci how to deploy to AWS
+  provider: elasticbeanstalk
+  region: "ap-southeast-1"
+  app: "docker-react"  # app name for created aws application
+  env: "Docker-env"
+  bucket_name: "elasticbeanstalk-ap-southeast-1-99999999999"  # s3 bucket (hard drive)
+  bucket_path: "docker-react"
+  on:
+    # when code gets merged to master branch, this code will be deployed to production
+    branch: master
+  # IAM api keys (can be used by external services), create user in IAM on AWS Management Console
+  # get access key from environment variable created in Travis CI
+  access_key_id: $AWS_ACCESS_KEY
+  secret_access_key: "$AWS_SECRET_KEY"
