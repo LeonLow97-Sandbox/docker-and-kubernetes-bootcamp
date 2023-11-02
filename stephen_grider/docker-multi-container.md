@@ -63,10 +63,10 @@ environment:
     - WDS_SOCKET_PORT=0
 ```
 
-- In `default.conf`, add this:
+- In `default.conf`, add this (for development environment only):
 
 ```conf
-# for allowing WebSocket to React Server
+# for allowing WebSocket to React Server (FOR DEVELOPMENT!!)
 location /ws {
     proxy_pass http://client;
     proxy_http_version 1.1;
@@ -74,3 +74,26 @@ location /ws {
     proxy_set_header Connection "Upgrade";
 }
 ```
+
+## Production Multi-Container Deployments
+
+- Single Container Deployment
+    1. Push code to github
+    2. Travis automatically pulls repo
+    3. Travis builds an image, tests code
+    4. Travis pushes code to AWS EB
+    5. EB builds image, deploys it
+        - Not good because EB should be serving the web application, not building image
+- Multi-Container Deployment
+    1. Push code to github
+    2. Travis automatically pulls repo
+    3. Travis builds a **test** image, tests code
+    4. Travis build **prod** images
+    5. Travis pushes built **prod** images to Docker Hub.
+    6. Travis pushes project to AWS EB
+    7. EB pulls built images from Docker Hub, deploys
+        - No longer dependent on EB to build our images
+
+### Production Dockerfile
+
+- `Dockerfile`
