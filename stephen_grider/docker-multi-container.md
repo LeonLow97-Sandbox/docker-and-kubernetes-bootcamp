@@ -30,3 +30,9 @@
 - On Client Side, we are making requests to `/api/values` but on the server side, we are receiving requests on `/values`.
   - NGINX looks at the incoming request path. If it starts with `/`, redirect request to express server.
   - If it starts with `/api`, redirect request to the express API, nginx removes `/api` and when it reaches express api, it will become `/values`
+
+### Routing with NGINX
+
+- Use `default.conf` to add configuration rules to NGINX for the path routing.
+    - **Upstream Server**: servers that NGINX redirect incoming requests to.
+    - NGINX redirects to `client:3000` and `server:5000` as named in services in docker-compose.yml
