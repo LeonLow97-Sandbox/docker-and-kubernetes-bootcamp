@@ -14,3 +14,10 @@ after_success:
   - docker build -t leonlow/multi-nginx ./nginx
   - docker build -t leonlow/multi-server ./server
   - docker build -t leonlow/multi-worker ./worker
+  # Run `docker login` to login to Docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those image and push them to docker hub
+  - docker push leonlow/multi-client
+  - docker push leonlow/multi-nginx
+  - docker push leonlow/multi-server
+  - docker push leonlow/multi-worker
