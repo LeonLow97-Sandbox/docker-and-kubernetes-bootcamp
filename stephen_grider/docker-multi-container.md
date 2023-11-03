@@ -94,6 +94,11 @@ location /ws {
     7. EB pulls built images from Docker Hub, deploys
         - No longer dependent on EB to build our images
 
-### Production Dockerfile
+### Travis Configuration Setup
 
-- `Dockerfile`
+1. Specify docker as dependency
+2. Build test version of React project
+3. Run tests
+4. Build prod versions of all projects
+5. Push all to docker hub
+6. Tell Elastic Beanstalk to update
