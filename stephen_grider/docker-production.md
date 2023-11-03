@@ -3,6 +3,7 @@
 <image src="./diagrams/docker-24.png" />
 
 - Development --> Testing --> Deployment --> Development
+- For a **SINGLE CONTAINER** Docker Application (just the frontend)
 
 ### Flow Specifics
 
@@ -50,7 +51,11 @@
   - `.dev` runs it in development only
   - `docker build -f Dockerfile.dev .`
     - `-f` specify file to be used to build the image
+- `Dockerfile`
+  - `docker build .`
+  - `.` is the build context and since `-f` is not specified, Docker looks for `Dockerfile`
 - Starting the container: `docker run -p 3000:3000 <image_id>`
+  - `-p 3000:3000`: map localhost port 3000 to container port 3000
 
 ### What are Docker Volumes?
 
@@ -164,7 +169,20 @@ services:
    - `FROM` specifies a block and we will create 2 blocks - build phase and run phase
 2. Run `docker build .` to retrieve the image id
 3. Run `docker run -p 8080:80 <image_id>`
+
    - `80` because that is the port used by nginx
+   - If you want nginx to run on a different port (e.g., 81), need to specify in the Dockerfile and that image will be built. Otherwise, NGINX listens on port 80 for requests by default.
+
+  ```conf
+  # Use the official Nginx base image
+  FROM nginx:latest
+
+  # Copy your custom Nginx configuration to the container
+  COPY custom-nginx.conf /etc/nginx/conf.d/default.conf
+
+  # Expose port 81
+  EXPOSE 81
+  ```
 
 ## Continuous Integration and Deployment with AWS (CI/CD)
 
@@ -181,7 +199,7 @@ services:
 - Travis CI
   - When you push code to GitHub, Travis will pull code from GitHub Repository.
   - Travis CI will test your code base and help to deploy your application to AWS.
-    - To run test suite, we will be using `Dockerfile.dev` instead of `Dockerfile`
+    - To run test suite, we will be using `Dockerfile.dev` instead of `Dockerfile` because we don't run tests in Production image.
   ```
   docker build -t leonlow/docker-react -f Dockerfile.dev .
   docker run -e CI=true leonlow/docker-react npm run test
@@ -222,4 +240,3 @@ services:
 - The app was simple - no outside dependencies
 - Image was built multiple times and built on our application
 - How do we connect to a database from a container?
-

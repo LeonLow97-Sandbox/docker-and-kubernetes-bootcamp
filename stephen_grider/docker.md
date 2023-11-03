@@ -334,7 +334,7 @@ Successfully built a3bc35b05f0d
 - Tagging Convention
     - `leonlow`: docker ID
     - `redis`: repo/project name
-    - `latest`: version
+    - `latest`: version (optional, if not specified, defaults to `latest`)
 
 ### Manual Image Generation with Docker Commit
 
