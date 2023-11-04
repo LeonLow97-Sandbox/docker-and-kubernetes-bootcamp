@@ -2,8 +2,9 @@
 
 ### What is Kubernetes?
 
-<img src="./diagrams/kubernetes-1.png" />
-<img src="./diagrams/kubernetes-2.png" />
+<img src="./diagrams/docker-with-ebs.png" />
+<img src="./diagrams/scaling-with-ebs.png" />
+<img src="./diagrams/kubernetes-cluster.png" />
 
 - Kubernetes is a system for running many different containers over multiple different machines / virtual machines.
 - Use kubernetes when we need to scale up our application and run many different containers with different images.
@@ -15,7 +16,8 @@
 
 ### kubectl and minikube
 
-<img src="./diagrams/kubernetes-3.png" />
+<img src="./diagrams/minikube-vs-production.png" />
+<img src="./diagrams/minikube-and-kubectl.png" />
 
 - kubectl
   - kubernetes cluster
@@ -26,6 +28,8 @@
   - to create and run a kubernetes cluster on local machine
 
 ### Install kubectl
+
+<img src="./diagrams/install-kubectl.png" />
 
 ```
 brew install kubectl
@@ -69,11 +73,21 @@ docker push <name>/repository_name>:<name>
 
 ### Defining Properties in `yaml` file for k8s
 
+<img src="./diagrams/apiVersion.png" />
+
 - `apiVersion`: each API version defines a different set of 'objects' we can use
 - `Kind`: represents the type of object to be made, e.g., Pod, Service
   - Objects serve different purposes - running a container (pod), monitoring a container, setting up networking (service), etc.
 
-### Running Containers in Pods
+## Kubernetes Object Types
+
+<img src="./diagrams/kubernetes-objects.png" />
+<img src="./diagrams/example-object-types.png" />
+
+### Pods
+
+<img src="./diagrams/pods-1.png" />
+<img src="./diagrams/pods-2.png" />
 
 - `minikube start` creates a virtual machine on our computer and that VM is a 'node'. The node is used by Kubernetes to run some number of objects.
 - Create a Pod inside the Node.
@@ -88,4 +102,84 @@ docker push <name>/repository_name>:<name>
 ```
 # to get the entire list of kubernetes objects
 kubectl api-resources
+```
+
+### Services
+
+<img src="./diagrams/kubernetes-services.png" />
+
+- Set up networking in a Kubernetes cluster
+- 4 subtypes under 'Services'
+  - ClusterIP
+  - NodePort
+    - Exposes a container to the outside world (only good for DEV purposes!!)
+    - Sets up the communication between the outside world (browser) and the container inside the Pod.
+  - LoadBalancer
+  - Ingress
+- If we have multiple services inside a single Kubernetes node, it is up to the kube proxy to send off requests to the appropriate services.
+
+```yaml
+# Service selector
+  selector:
+    component: web
+
+# Pod selector
+  labels:
+    component: web
+
+# Both has to be the same then the Service will forward requests to the Pod
+# We can also mix and match the key-value pairs
+  selector:
+    tier: frontend
+
+  labels:
+    tier: frontend
+```
+
+- `ports` collection of ports to be opened on the Service.
+- `port` is the port through which other Pods within the cluster can access the Service. Used for Pod-to-Pod communication within the cluster.
+- `targetPort` port inside the Pod that the Service should route traffic to.
+- `nodePort`
+  - used to expose a Service to the outside world. (browser to test out connection to the Pod)
+  - NodePort ports are in the range of 3000-32767, if not specified, it will be randomly assigned within the range.
+  - Useful for exposing services for testing, development and small-scale deployments. 
+  - In Production environments, nodePort is not used but a LoadBalancer or an Ingress controller are used for more advanced and controlled external access.
+
+```yaml
+# NodePort Service
+ports:
+  - port: 3050
+    targetPort: 3000
+    nodePort: 31515
+
+# Pod
+ports:
+  - containerPort: 3000
+```
+
+### Feed a config file to Kubectl
+
+<img src="./diagrams/kubectl-apply.png" />
+<img src="./diagrams/kubectl-get.png" />
+
+- To access container in Pod from the outside world
+  - Get the IP address of the Kubernetes Node VM Created by minikube
+  - Run `minikube ip` to retrieve the IP address, don't use localhost if using minikube to create VM
+  - Since we are using Docker Desktop to run Kubernetes VM, we will use localhost.
+
+```
+➜  project-simple-k8s git:(main) ✗ kubectl apply -f client-pod.yaml
+pod/client-pod created
+
+➜  project-simple-k8s git:(main) ✗ kubectl apply -f client-node-port.yaml
+service/client-node-port created
+
+➜  project-simple-k8s git:(main) ✗ kubectl get pods
+NAME         READY   STATUS    RESTARTS   AGE
+client-pod   1/1     Running   0          51s
+
+➜  project-simple-k8s git:(main) ✗ kubectl get services
+NAME               TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+client-node-port   NodePort    10.100.150.18   <none>        3050:31515/TCP   101s
+kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP          12h
 ```
