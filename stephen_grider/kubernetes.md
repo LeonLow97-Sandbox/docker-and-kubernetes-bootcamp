@@ -183,3 +183,38 @@ NAME               TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AG
 client-node-port   NodePort    10.100.150.18   <none>        3050:31515/TCP   101s
 kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP          12h
 ```
+
+## Kubernetes Entire Deployment Flow
+
+<img src="./diagrams//kubernetes-deployment-flow.png" />
+
+### Example
+
+1. Feeding deployment (config) file with the `kubectl apply` command.
+2. The file is then passed to the Master.
+3. `kube-apiserver` program is responsible to monitor all the nodes inside the Kubernetes Cluster.
+4. kube-apiserver ensures that the containers are started and distributed across the nodes (virtual machines). Each node has a docker running and docker reaches out to Docker Hub and downloads the `multi-worker` image. 
+5. The node the uses the `multi-worker` image to create the number of containers that we require.
+6. The Master does a status update by looking at all the nodes and ensure that all the copies of `multi-worker` containers are running.
+
+- If one container fails to run, the Master will be updated and finds a node to place a new running `multi-worker` container to ensure the correct number of running containers are always up.
+- We always use `kubectl` command line tool to connect with Master and not to the Node directly. The Master connects to the Node.
+
+### Imperative vs Declarative Deployments
+
+<img src="./diagrams/imp-vs-dec-1.png" />
+<img src="./diagrams/imp-vs-dec-2.png" />
+<img src="./diagrams/imp-vs-dec-3.png" />
+<img src="./diagrams/imp-vs-dec-4.png" />
+<img src="./diagrams/imp-vs-dec-5.png" />
+
+- **Imperative Deployments**:
+  - Involves giving explicit step-by-step instructions to Kubernetes on how to create and manage resources.
+  - Uses imperative commands like `kubectl create`, `kubectl apply` or `kubectl run` to crete and manage objects in the Kubernetes Cluster.
+  - Specify the exact state you want your resources to be in, and Kubernetes performs the necessary actions to achieve that state.
+  - Often used for initial setup and resource creation, but they may not be ideal for maintaining complex, long-term applications and managing updates.
+- **Declarative Deployments**:
+  - Focuses on describing the desired end state of your resources using YAML configuration files. E.g., You define the configuration, including the desired number of replicas, image versions, resource limits, etc., in a declarative manner.
+  - Apply these configuration files to the Kubernetes cluster using `kubectl apply -f` and Kubernetes will make the necessary changes to ensure the current state matches the desired state.
+  - Recommended approach to manage **production-grade** applications in Kubernetes. They make it easier to track and version changes, maintain consistency and collaborate with others.
+  - Useful in CI/CD pipelines, as you can version control your configurations and automate updates.
