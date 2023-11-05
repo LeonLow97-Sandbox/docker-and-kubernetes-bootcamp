@@ -241,6 +241,7 @@ kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP          12
 ---
 
 - For Pod, `name` and `kind` should be the same, then we make changes in the config file, e.g., image.
+  - From `image: stephengrider/multi-client` to `image: stephengrider/multi-worker` in yaml file
 - Run `kubectl apply` to apply the new configuration
   ```
   ➜  project-simple-k8s git:(main) ✗ kubectl apply -f client-pod.yaml
@@ -262,6 +263,129 @@ kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP          12
   Namespace:        default
   ```
 
+### Limitations in Config Updates For Pod
+
+- There are certain fields (those in red above) that we cannot update once the Pod has been created.
+- Change from `containerPort: 3000` to `containerPort: 9999`
+
+```
+➜  project-simple-k8s git:(main) ✗ kubectl apply -f client-pod.yaml
+The Pod "client-pod" is invalid: spec: Forbidden: pod updates may not change fields other than `spec.containers[*].image`,`spec.initContainers[*].image`,`spec.activeDeadlineSeconds`,`spec.tolerations` (only additions to existing tolerations),`spec.terminationGracePeriodSeconds` (allow it to be set to 1 if it was previously negative)
+```
+
+- Solution: Use a new Object Type called `Deployment`
+
+### Running Containers with `Deployment` (Kubernetes Object Type)
+
+<img src="./diagrams/pods-vs-deployment-1.png" />
+<img src="./diagrams/pods-vs-deployment-2.png" />
+<img src="./diagrams/pods-vs-deployment-3.png" />
+
+- `Deployment` maintains a **set of identical pods**, ensuring that they have the correct config and that the right number exists, facilitating updates and rollbacks of application code.
+
+---
+
+#### Changing Port Number in the Pod Template within `Deployment` Object
+
+- It will not change the port number in the existing Pod but will lead to the creation of new Pods with the updated configuration, and the old Pods will be replaced in a controlled manner as part of the rolling update.
+- **Rolling Update Strategy** ensures that the application remains available during the update process, and it minimizes disruption to your users.
+- Full Process:
+  1. The `Deployment` controller detects the change in the Pod Template and updates its desired state to include the new configuration (including the new port number).
+  2. The `Deployment` controller then starts creating new Pods based on the updated configuration.
+  3. The old Pods are not immediately killed; Kubernetes follows a **rolling update strategy** to ensure that the application remains available. It gradually replaced the old Pods with the new ones. The rate of replacement can be controlled through settings like `maxUnavailable` and `maxSurge` in the `Deployment` configuration.
+  4. Once a new Pod is up and running and considered healthy, the old Pods are gradually terminated.
+
+---
+
+### Deployment YAML Config of `Deployment`
+
+- `replicas` is the number of Pods that this Deployment is supposed to create.
+- `template` used to configure the Pods created.
+- `selector`
+  - Deployment reaches out to Master to pass the configuration of the Pod. The Master then creates the Pods.
+  - After the Pod is created, the Deployment somehow needs to connect to the Pod and it connects via the `selector` with label of `component: web`.
+
+```
+➜  project-simple-k8s git:(main) ✗ kubectl apply -f client-deployment.yaml
+deployment.apps/client-deployment created
+
+➜  project-simple-k8s git:(main) ✗ kubectl get pods
+NAME                                 READY   STATUS              RESTARTS   AGE
+client-deployment-6d4dfddfdd-pgg6t   0/1     ContainerCreating   0          2s
+```
+
 ### Deleting a Pod
 
 <img src="./diagrams/kubectl-delete.png" />
+
+- This is an **imperative deployment/update** when we want to delete a resource.
+- The deletion of a running Pod gets around 10 seconds to delete just like when we delete a container (graceful shutdown).
+
+### `kubectl get deployments`
+
+```
+➜  project-simple-k8s git:(main) ✗ kubectl get deployments
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+client-deployment   1/1     1            1           25s
+```
+
+- `READY`: we specified 1 replicas, so now we have desired 1 replica Pod created over 1 current Pod that is up and running.
+- `UP-TO-DATE`: if we make a change to configuration YAML file like in the template section, our Deployment will be out of date and we might see UP-TO-DATE go down to 0. As existing Pods get recreated, the UP-TO-DATE gets updated.
+- `AVAILABLE`: number of Pods that are ready to accept incoming requests.
+
+### Why do we need `Services`?
+
+- `kubectl get pods -o wide`
+  - can see the IP address assigned to the Pod.
+  - Every single Pod created will get assigned its own IP Address (dynamic IP addresses).
+    - This IP Address is the Node/VM's IP address and it cannot be accessed easily.
+  - If we recreate or update the Pod, the IP Address assigned to that Pod changes. The dynamic nature makes it impractical to rely on individual Pod IP addresses for accessing your applications.
+- Solution:
+  - Use Services as it uses a `selector` to connect to Pods with that `selector` and route traffic to it. (**Routing and Proxying**)
+  - Thus, we no longer have to worry about Pods that change IP Address when they get recreated/updated.
+- Services also provide **load balancing** for incoming traffic as it distributes incoming requests across multiple Pods. 
+- **Service Discovery**: When one component of your application needs to communicate with another, it can simply use the Service's DNS name rather than hardcoded IP addresses.
+
+### Scaling and Changing Deployments
+
+- Notice the Pod `AGE` changed to 34 seconds ago.
+  - When we apply a new configuration to the Pod, the `AGE` gets updated because the Pod gets deleted and created right away.
+
+```
+➜  project-simple-k8s git:(main) ✗ kubectl apply -f client-deployment.yaml
+deployment.apps/client-deployment configured
+
+➜  project-simple-k8s git:(main) ✗ kubectl get deployments
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+client-deployment   1/1     1            1           21m
+
+➜  project-simple-k8s git:(main) ✗ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+client-deployment-6585db799f-k28kp   1/1     Running   0          34s
+
+➜  project-simple-k8s git:(main) ✗ kubectl describe pods
+```
+
+- Made a change to the number of `replicas` from `replicas: 1` to `replicas: 5`
+- Can see that the number of ready Deployments get updated from 1/5 to 5/5 slowly, and also 5 Pods were created after that.
+
+```
+➜  project-simple-k8s git:(main) ✗ kubectl apply -f client-deployment.yaml
+deployment.apps/client-deployment configured
+➜  project-simple-k8s git:(main) ✗ kubectl get deployments
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+client-deployment   1/5     5            1           25m
+➜  project-simple-k8s git:(main) ✗ kubectl get deployments
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+client-deployment   4/5     5            4           25m
+➜  project-simple-k8s git:(main) ✗ kubectl get deployments
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+client-deployment   5/5     5            5           25m
+➜  project-simple-k8s git:(main) ✗ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+client-deployment-6585db799f-k28kp   1/1     Running   0          4m40s
+client-deployment-6585db799f-kvn7q   1/1     Running   0          22s
+client-deployment-6585db799f-r754h   1/1     Running   0          22s
+client-deployment-6585db799f-rb2ch   1/1     Running   0          22s
+client-deployment-6585db799f-whw97   1/1     Running   0          22s
+```
