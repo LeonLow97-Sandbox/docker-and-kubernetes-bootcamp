@@ -69,6 +69,9 @@ docker push <name>/repository_name>:<name>
 
 ### `docker-compose` vs Kubernetes
 
+<img src="./diagrams/docker-compose-vs-kubernetes-1.png" />
+<img src="./diagrams/docker-compose-vs-kubernetes-2.png" />
+
 - Goal: Get the `multi-client` image (from Docker project) running on our local Kubernetes Cluster running as a container.
 
 ### Defining Properties in `yaml` file for k8s
@@ -88,6 +91,8 @@ docker push <name>/repository_name>:<name>
 
 <img src="./diagrams/pods-1.png" />
 <img src="./diagrams/pods-2.png" />
+<img src="./diagrams/pod-config-kubernetes.png" />
+<img src="./diagrams/connect-to-pod-kubernetes.png" />
 
 - `minikube start` creates a virtual machine on our computer and that VM is a 'node'. The node is used by Kubernetes to run some number of objects.
 - Create a Pod inside the Node.
@@ -107,6 +112,9 @@ kubectl api-resources
 ### Services
 
 <img src="./diagrams/kubernetes-services.png" />
+<img src="./diagrams/nodeport-kubernetes.png" />
+<img src="./diagrams/nodeport-selector-kubernetes.png" />
+<img src="./diagrams/pod-to-pod-kubernetes.png" />
 
 - Set up networking in a Kubernetes cluster
 - 4 subtypes under 'Services'
@@ -142,7 +150,7 @@ kubectl api-resources
 - `nodePort`
   - used to expose a Service to the outside world. (browser to test out connection to the Pod)
   - NodePort ports are in the range of 3000-32767, if not specified, it will be randomly assigned within the range.
-  - Useful for exposing services for testing, development and small-scale deployments. 
+  - Useful for exposing services for testing, development and small-scale deployments.
   - In Production environments, nodePort is not used but a LoadBalancer or an Ingress controller are used for more advanced and controlled external access.
 
 ```yaml
@@ -161,6 +169,7 @@ ports:
 
 <img src="./diagrams/kubectl-apply.png" />
 <img src="./diagrams/kubectl-get.png" />
+<img src="./diagrams/minikube-vm-ip.png" />
 
 - To access container in Pod from the outside world
   - Get the IP address of the Kubernetes Node VM Created by minikube
@@ -193,8 +202,8 @@ kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP          12
 1. Feeding deployment (config) file with the `kubectl apply` command.
 2. The file is then passed to the Master.
 3. `kube-apiserver` program is responsible to monitor all the nodes inside the Kubernetes Cluster.
-4. kube-apiserver ensures that the containers are started and distributed across the nodes (virtual machines). Each node has a docker running and docker reaches out to Docker Hub and downloads the `multi-worker` image. 
-5. The node the uses the `multi-worker` image to create the number of containers that we require.
+4. kube-apiserver ensures that the containers are started and distributed across the nodes (virtual machines). Each node has a docker running and docker reaches out to Docker Hub and downloads the `multi-worker` image.
+5. The node then uses the `multi-worker` image to create the number of containers that we require.
 6. The Master does a status update by looking at all the nodes and ensure that all the copies of `multi-worker` containers are running.
 
 - If one container fails to run, the Master will be updated and finds a node to place a new running `multi-worker` container to ensure the correct number of running containers are always up.
@@ -218,3 +227,41 @@ kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP          12
   - Apply these configuration files to the Kubernetes cluster using `kubectl apply -f` and Kubernetes will make the necessary changes to ensure the current state matches the desired state.
   - Recommended approach to manage **production-grade** applications in Kubernetes. They make it easier to track and version changes, maintain consistency and collaborate with others.
   - Useful in CI/CD pipelines, as you can version control your configurations and automate updates.
+
+### Updating Existing Objects (Declarative Deployment)
+
+<img src="./diagrams/update-object-kubernetes.png" />
+<img src="./diagrams/imperative-vs-declarative-new-image.png" />
+
+---
+
+- Old Goal: Get the `multi-client` image running on our local Kubernetes Cluster running as a container.
+- New Goal: Update our existing Pod to use the `multi-worker` image.
+
+---
+
+- For Pod, `name` and `kind` should be the same, then we make changes in the config file, e.g., image.
+- Run `kubectl apply` to apply the new configuration
+  ```
+  ➜  project-simple-k8s git:(main) ✗ kubectl apply -f client-pod.yaml
+  pod/client-pod configured
+  ```
+- Master will then update the Pod configuration for declarative deployment.
+
+<img src="./diagrams/kubectl-describe.png" />
+
+- Run `kubectl describe pod client-pod` to inspect the Pod and check the new configuration.
+
+  ```
+  ➜  project-simple-k8s git:(main) ✗ kubectl get pods
+  NAME         READY   STATUS    RESTARTS       AGE
+  client-pod   1/1     Running   2 (5m4s ago)   23h
+
+  ➜  project-simple-k8s git:(main) ✗ kubectl describe pod client-pod
+  Name:             client-pod
+  Namespace:        default
+  ```
+
+### Deleting a Pod
+
+<img src="./diagrams/kubectl-delete.png" />
