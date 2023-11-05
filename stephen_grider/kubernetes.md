@@ -335,6 +335,9 @@ client-deployment   1/1     1            1           25s
 
 ### Why do we need `Services`?
 
+<img src="./diagrams/deployment-config-with-selector.png" />
+<img src="./diagrams/pod-ip-address.png" />
+
 - `kubectl get pods -o wide`
   - can see the IP address assigned to the Pod.
   - Every single Pod created will get assigned its own IP Address (dynamic IP addresses).
@@ -389,3 +392,54 @@ client-deployment-6585db799f-r754h   1/1     Running   0          22s
 client-deployment-6585db799f-rb2ch   1/1     Running   0          22s
 client-deployment-6585db799f-whw97   1/1     Running   0          22s
 ```
+
+### Updating Deployment Images
+
+<img src="./diagrams/updated-image-deployment-1.png" />
+<img src="./diagrams/updated-image-deployment-2.png" />
+
+- Scenario: Docker image has been updated to a new version, how do we update the Docker containers in the Deployment and Pods?
+  1. Update the `multi-client` image, push to Docker Hub
+  2. Get the deployment to recreate our Pods with the latest version of `multi-client`. (VERY CHALLENGING!)
+    - [GitHub Issue on using a new image in Deployment](https://github.com/kubernetes/kubernetes/issues/33664)
+
+```
+# pushing latest image to Docker Hub
+docker build -t leonlow/multi-client .
+docker push leonlow/multi-client
+```
+
+- If the YAML Deployment config file is unchanged, Deployment won't look into Docker Hub to see if a new image version is available as shown below.
+
+```
+➜  project-simple-k8s git:(main) ✗ kubectl apply -f client-deployment.yaml
+deployment.apps/client-deployment unchanged
+```
+
+- image: stephengrider/multi-client:v1, image: stephengrider/multi-client:v2
+- Solutions:
+  1. Manually delete pods to get the deployment to recreate them with the latest version. (Bad because you might accidentally delete the wrong pod and the action is manual)
+  2. Tag built images with a real version n umber and specify that version in the config file. (Bad because it adds an extra step in the production deployment process - have to tag version number in config file and in the new image created).
+  3. [Recommended] Use an **imperative command** to update the image version thr deployment should use
+    - Rebuilt image
+    - Tag the image with a version number and push to Docker Hub
+      - `docker build -t leonlow/multi-client:v2 .`
+      - `docker push leonlow/multi-client:v2`
+    - Run a `kubectl` command forcing the deployment to use the new image version
+      - `kubectl set image deployment/client-deployment client=stephengrider/multi-client:v5`
+
+    <img src="./diagrams/kubectl-set-image.png" />
+
+    ```
+    ➜  project-simple-k8s git:(main) ✗ kubectl set image deployment/client-deployment client=stephengrider/multi-client:v5
+    deployment.apps/client-deployment image updated
+
+    ➜  project-simple-k8s git:(main) ✗ kubectl get pods
+    NAME                                 READY   STATUS              RESTARTS   AGE
+    client-deployment-6d4dfddfdd-xjhqq   1/1     Running             0          64m
+    client-deployment-7bbb559b4c-bcg62   0/1     ContainerCreating   0          5s
+
+    ➜  project-simple-k8s git:(main) ✗ kubectl get pods
+    NAME                                 READY   STATUS    RESTARTS   AGE
+    client-deployment-7bbb559b4c-bcg62   1/1     Running   0          12s
+    ```
