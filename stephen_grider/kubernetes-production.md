@@ -4,6 +4,7 @@
 <img src="./diagrams/k8s-architecture.png" />
 
 - On local, we will set up our application on one single Node.
+  - "ChatGPT": You generally don't need to use Docker Compose in a production Kubernetes environment. Kubernetes itself provides a way to define and manage containerized applications in a more scalable, resilient, and production-ready manner. However, Docker Compose can still be valuable for local development and testing.
 - On Cloud (AWS or Google Cloud), we have the option to set up the application on multiple Nodes.
 
 ### Path to Production
@@ -25,10 +26,10 @@ docker-compose -f docker-compose-dev.yml down
 <img src="./diagrams/k8s-clusterIP.png" />
 
 - ClusterIP
-    - ClusterIP Services attached to Deployment can allow other Deployment object types in the Kubernetes Cluster to connect to.
-    - If connected to Cluster IP service, we are exposing the Pods in Deployment to other services inside the Kubernetes Cluster.
-    - Need the ClusterIP Service to provide objects (Pods) to everything inside the cluster.
-    - From outside Kubernetes Cluster (outside world), we cannot access the Pod even if the Deployment object has a ClusterIP Service.
+  - ClusterIP Services attached to Deployment can allow other Deployment object types in the Kubernetes Cluster to connect to.
+  - If connected to Cluster IP service, we are exposing the Pods in Deployment to other services inside the Kubernetes Cluster.
+  - Need the ClusterIP Service to provide objects (Pods) to everything inside the cluster.
+  - From outside Kubernetes Cluster (outside world), we cannot access the Pod even if the Deployment object has a ClusterIP Service.
 - Use a `selector` so our service knows what set of Pods it is providing access to.
 - Traffic will enter through the Ingress Service instead.
 
@@ -48,3 +49,16 @@ spec:
 
 - `port: 3000`: This is specifying a port on the service. It means that the service will listen on port 3000. Incoming traffic to this port on the service will be directed to the corresponding targetPort on the pods that the service is routing traffic to.
 - `targetPort: 3000`: This specifies the target port on the Pods. When the service receives traffic on the port defined by `port`, it forwards that traffic to the Pods on the port defined by `targetPort`. In this case, both `port` and `targetPort` are set to 3000, so incoming traffic on port 3000 will be routed to port 3000 on the Pods.
+
+```
+# command to run a group of config files (specified directory instead)
+➜  project-multi-container-k8s git:(main) kubectl apply -f ./k8s
+service/client-cluster-ip-service created
+deployment.apps/client-deployment created
+```
+
+### Express API Deployment Config
+
+<img src="./diagrams/k8s-api-deployment.png" />
+
+- Need to provide environment variables to out Deployment Config for API.
