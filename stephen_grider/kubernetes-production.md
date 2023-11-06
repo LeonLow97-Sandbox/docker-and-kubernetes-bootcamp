@@ -160,3 +160,54 @@ Listening
     - `pod_name` retrieved from `kubectl get pods`
     - Error because we haven't connect to postgres
 
+### Postgres PVC (Persistent Volume Claim)
+
+- Volumes with Databases
+- Volume here is similar to Docker Volumes
+- Data is being stored in the file system of the Postgres Container. If Pod gets delete by Deployment, we will lose everything if that Container crashes. Deployment then created a new Pod but no data is being carried over from the old Pod that crashed. (BAD)
+- Thus, we create volumes. Postgres container writes data to volumes e instead. New Pod created has access to the volume that was used by the old Pod that crashed.
+
+```yaml
+metadata:
+  name: postgres-deployment
+spec:
+  replicas: 1
+```
+
+- From the above configuration, try to avoid setting `replicas: 2` because we will have 2 postgres server Pods writing to the same file system at the same time. BAD. Issue with data integrity.
+
+### Kubernetes Volumes
+
+<img src="./diagrams/kubernetes-volumes-1.png" />
+<img src="./diagrams/kubernetes-volumes-2.png" />
+<img src="./diagrams/kubernetes-volumes-3.png" />
+<img src="./diagrams/kubernetes-volumes-4.png" />
+<img src="./diagrams/kubernetes-volumes-5.png" />
+<img src="./diagrams/kubernetes-volumes-6.png" />
+<img src="./diagrams/kubernetes-volumes-7.png" />
+<img src="./diagrams/kubernetes-volumes-8.png" />
+
+- Kubernetes Volume is tied to the Pod.
+    - If the Pod dies, the Kubernetes Volume disappears.
+    - Thus, Kubernetes Volume is not the ideal storage for postgres data. (Not Good)
+- Persistent Volume
+    - Not tied to any specific Pod or Container.
+    - If Container dies or Pod deleted, the Persistent Volume will survive. When new Pod is created, the Postgres container in the Pod can connect to the Persistent Volume.
+- Persistent Volume Claim
+    - Different storage options inside the Kubernetes Cluster, specify different volume claims in the config file.
+    - Pod Config request from Kubernetes. Kubernetes that looks into its store with Statically Provisioned Persistent Volumes (already present) or Dynamically provisioned Persistent Volume (created on the fly when needed).
+    - It is not an actual instance of storage, it is attached to Pod Config. Kubernetes looks at that claim and check statically / dynamically provisioned Persistent Volume and meet that claim.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: database-persistent-volume-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi # 2 GB of space
+```
+
