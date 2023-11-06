@@ -126,3 +126,37 @@ metadata:
 - We only set up the ClusterIP Service when we want to redirect traffic to the Pods in the Deployment.
 - In this case, we are not routing any requests to the multi-worker pods.
 
+### Reapplying a Batch of Config Files
+
+```
+➜  project-multi-container-k8s git:(main) kubectl apply -f ./k8s
+service/client-cluster-ip-service unchanged
+deployment.apps/client-deployment unchanged
+service/server-cluster-ip-service created
+deployment.apps/server-deployment created
+deployment.apps/worker-deployment created
+```
+
+- Kubernetes realised that we did not change the deployment YAML config file.
+- Thus, kubernetes did not recreate the Deployment object and ClusterIP Service for client.
+
+```
+➜  project-multi-container-k8s git:(main) ✗ kubectl logs server-deployment-5949848f7-27kqw
+
+> @ start /app
+> node index.js
+
+Listening
+{ Error: connect ECONNREFUSED 127.0.0.1:5432
+    at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1161:14)
+  errno: 'ECONNREFUSED',
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432 }
+```
+
+- `kubectl logs <pod_name>`
+    - `pod_name` retrieved from `kubectl get pods`
+    - Error because we haven't connect to postgres
+
