@@ -346,7 +346,7 @@ client-deployment   1/1     1            1           25s
 - Solution:
   - Use Services as it uses a `selector` to connect to Pods with that `selector` and route traffic to it. (**Routing and Proxying**)
   - Thus, we no longer have to worry about Pods that change IP Address when they get recreated/updated.
-- Services also provide **load balancing** for incoming traffic as it distributes incoming requests across multiple Pods. 
+- Services also provide **load balancing** for incoming traffic as it distributes incoming requests across multiple Pods.
 - **Service Discovery**: When one component of your application needs to communicate with another, it can simply use the Service's DNS name rather than hardcoded IP addresses.
 
 ### Scaling and Changing Deployments
@@ -401,7 +401,7 @@ client-deployment-6585db799f-whw97   1/1     Running   0          22s
 - Scenario: Docker image has been updated to a new version, how do we update the Docker containers in the Deployment and Pods?
   1. Update the `multi-client` image, push to Docker Hub
   2. Get the deployment to recreate our Pods with the latest version of `multi-client`. (VERY CHALLENGING!)
-    - [GitHub Issue on using a new image in Deployment](https://github.com/kubernetes/kubernetes/issues/33664)
+  - [GitHub Issue on using a new image in Deployment](https://github.com/kubernetes/kubernetes/issues/33664)
 
 ```
 # pushing latest image to Docker Hub
@@ -418,28 +418,46 @@ deployment.apps/client-deployment unchanged
 
 - image: stephengrider/multi-client:v1, image: stephengrider/multi-client:v2
 - Solutions:
+
   1. Manually delete pods to get the deployment to recreate them with the latest version. (Bad because you might accidentally delete the wrong pod and the action is manual)
   2. Tag built images with a real version n umber and specify that version in the config file. (Bad because it adds an extra step in the production deployment process - have to tag version number in config file and in the new image created).
   3. [Recommended] Use an **imperative command** to update the image version thr deployment should use
-    - Rebuilt image
-    - Tag the image with a version number and push to Docker Hub
-      - `docker build -t leonlow/multi-client:v2 .`
-      - `docker push leonlow/multi-client:v2`
-    - Run a `kubectl` command forcing the deployment to use the new image version
-      - `kubectl set image deployment/client-deployment client=stephengrider/multi-client:v5`
+
+  - Rebuilt image
+  - Tag the image with a version number and push to Docker Hub
+    - `docker build -t leonlow/multi-client:v2 .`
+    - `docker push leonlow/multi-client:v2`
+  - Run a `kubectl` command forcing the deployment to use the new image version
+    - `kubectl set image deployment/client-deployment client=stephengrider/multi-client:v5`
 
     <img src="./diagrams/kubectl-set-image.png" />
 
-    ```
-    ➜  project-simple-k8s git:(main) ✗ kubectl set image deployment/client-deployment client=stephengrider/multi-client:v5
-    deployment.apps/client-deployment image updated
+  ```
+  ➜  project-simple-k8s git:(main) ✗ kubectl set image deployment/client-deployment client=stephengrider/multi-client:v5
+  deployment.apps/client-deployment image updated
 
-    ➜  project-simple-k8s git:(main) ✗ kubectl get pods
-    NAME                                 READY   STATUS              RESTARTS   AGE
-    client-deployment-6d4dfddfdd-xjhqq   1/1     Running             0          64m
-    client-deployment-7bbb559b4c-bcg62   0/1     ContainerCreating   0          5s
+  ➜  project-simple-k8s git:(main) ✗ kubectl get pods
+  NAME                                 READY   STATUS              RESTARTS   AGE
+  client-deployment-6d4dfddfdd-xjhqq   1/1     Running             0          64m
+  client-deployment-7bbb559b4c-bcg62   0/1     ContainerCreating   0          5s
 
-    ➜  project-simple-k8s git:(main) ✗ kubectl get pods
-    NAME                                 READY   STATUS    RESTARTS   AGE
-    client-deployment-7bbb559b4c-bcg62   1/1     Running   0          12s
-    ```
+  ➜  project-simple-k8s git:(main) ✗ kubectl get pods
+  NAME                                 READY   STATUS    RESTARTS   AGE
+  client-deployment-7bbb559b4c-bcg62   1/1     Running   0          12s
+  ```
+
+### Configure Docker CLI to use Docker Server in Kubernetes Node (Minikube)
+
+<img src="./diagrams/inside-minikube-node-1.png" />
+<img src="./diagrams/inside-minikube-node-2.png" />
+
+- `eval $(minikube docker-env)` to set terminal (Docker CLI) to connect to Docker Server inside Kubernetes Node of Minikube. Configuring VM to use your Docker Server.
+  - This only configured your current terminal window.
+- `minikube docker-env` shows the environment variables of Minikube
+- Why mess with Docker in the Node?
+  - Use all the same debugging techniques we learned with Docker CLI
+    - `kubectl logs <pod_name>`
+    - `kubectl exec -it <pod_name>`
+  - Manually kill containers to test Kubernetes ability to 'self-heal'
+  - Delete cached images in the Node.
+    - `docker system prune -a`
