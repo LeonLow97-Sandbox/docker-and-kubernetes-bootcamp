@@ -100,5 +100,29 @@ spec:
   ports:
     - port: 5000
       targetPort: 5000
-
 ```
+
+### `selectors` in Deployment
+
+```yaml
+selector:
+matchLabels:
+    component: worker
+template:
+metadata:
+    labels:
+    component: worker
+```
+
+- **Selector Labels**
+    - The `selector` section is used to specify the criteria for selecting which Pods should be managed by the Deployment.
+    - The `template` section defines the template for the Pods that the Deployment will create.
+- The reason for specifying the `component: worker` label in both places is that it ensures that the Pods created by the Deployment have the label that the Deployment uses to select and manage them.
+- When you create or update the Deployment, the selector ensures that it matches Pods with the specified label, and the template ensures that the Pods it creates have the same label.
+
+### The Worker Deployment
+
+- Not setting up a ClusterIP Service.
+- We only set up the ClusterIP Service when we want to redirect traffic to the Pods in the Deployment.
+- In this case, we are not routing any requests to the multi-worker pods.
+
