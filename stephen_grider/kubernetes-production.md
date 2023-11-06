@@ -62,3 +62,43 @@ deployment.apps/client-deployment created
 <img src="./diagrams/k8s-api-deployment.png" />
 
 - Need to provide environment variables to out Deployment Config for API.
+
+### Combining Config into Single Files
+
+- Can create a single file to component the `ClusterIP` Service and `Deployment` object.
+- Use `---` 3 dashes to separate
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      component: server
+  template:
+    metadata:
+      labels:
+        component: server
+    spec:
+      containers: # 1 container in each Pod
+        - name: server
+          image: stephengrider/multi-server
+          ports:
+            - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: server-cluster-ip-service
+spec:
+  type: ClusterIP
+  selector:
+    component: server # specified in Pod as this selector
+  ports:
+    - port: 5000
+      targetPort: 5000
+
+```
