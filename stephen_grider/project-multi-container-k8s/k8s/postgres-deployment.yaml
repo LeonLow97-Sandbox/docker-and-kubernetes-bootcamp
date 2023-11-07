@@ -12,8 +12,25 @@ spec:
       labels:
         component: postgres
     spec:
+      # set up the request on the Pod to reach out to Kubernetes for the PVC
+      # k8s look into local hard drive or into the Cloud Provider
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: database-persistent-volume-claim
       containers:
         - name: postgres
           image: postgres
           ports:
             - containerPort: 5432
+          # specify the volume to be used in the container
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres # specific to postgres
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgpassword
+                  key: PGPASSWORD

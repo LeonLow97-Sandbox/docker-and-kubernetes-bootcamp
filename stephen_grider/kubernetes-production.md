@@ -107,16 +107,16 @@ spec:
 ```yaml
 selector:
 matchLabels:
-    component: worker
+  component: worker
 template:
 metadata:
-    labels:
-    component: worker
+  labels:
+  component: worker
 ```
 
 - **Selector Labels**
-    - The `selector` section is used to specify the criteria for selecting which Pods should be managed by the Deployment.
-    - The `template` section defines the template for the Pods that the Deployment will create.
+  - The `selector` section is used to specify the criteria for selecting which Pods should be managed by the Deployment.
+  - The `template` section defines the template for the Pods that the Deployment will create.
 - The reason for specifying the `component: worker` label in both places is that it ensures that the Pods created by the Deployment have the label that the Deployment uses to select and manage them.
 - When you create or update the Deployment, the selector ensures that it matches Pods with the specified label, and the template ensures that the Pods it creates have the same label.
 
@@ -157,8 +157,8 @@ Listening
 ```
 
 - `kubectl logs <pod_name>`
-    - `pod_name` retrieved from `kubectl get pods`
-    - Error because we haven't connect to postgres
+  - `pod_name` retrieved from `kubectl get pods`
+  - Error because we haven't connect to postgres
 
 ### Postgres PVC (Persistent Volume Claim)
 
@@ -188,15 +188,15 @@ spec:
 <img src="./diagrams/kubernetes-volumes-8.png" />
 
 - Kubernetes Volume is tied to the Pod.
-    - If the Pod dies, the Kubernetes Volume disappears.
-    - Thus, Kubernetes Volume is not the ideal storage for postgres data. (Not Good)
+  - If the Pod dies, the Kubernetes Volume disappears.
+  - Thus, Kubernetes Volume is not the ideal storage for postgres data. (Not Good)
 - Persistent Volume
-    - Not tied to any specific Pod or Container.
-    - If Container dies or Pod deleted, the Persistent Volume will survive. When new Pod is created, the Postgres container in the Pod can connect to the Persistent Volume.
+  - Not tied to any specific Pod or Container.
+  - If Container dies or Pod deleted, the Persistent Volume will survive. When new Pod is created, the Postgres container in the Pod can connect to the Persistent Volume.
 - Persistent Volume Claim
-    - Different storage options inside the Kubernetes Cluster, specify different volume claims in the config file.
-    - Pod Config request from Kubernetes. Kubernetes that looks into its store with Statically Provisioned Persistent Volumes (already present) or Dynamically provisioned Persistent Volume (created on the fly when needed).
-    - It is not an actual instance of storage, it is attached to Pod Config. Kubernetes looks at that claim and check statically / dynamically provisioned Persistent Volume and meet that claim.
+  - Different storage options inside the Kubernetes Cluster, specify different volume claims in the config file.
+  - Pod Config request from Kubernetes. Kubernetes that looks into its store with Statically Provisioned Persistent Volumes (already present) or Dynamically provisioned Persistent Volume (created on the fly when needed).
+  - It is not an actual instance of storage, it is attached to Pod Config. Kubernetes looks at that claim and check statically / dynamically provisioned Persistent Volume and meet that claim.
 
 ```yaml
 apiVersion: v1
@@ -211,3 +211,64 @@ spec:
       storage: 2Gi # 2 GB of space
 ```
 
+### Where Does Kubernetes Allocate Persistent Volumes?
+
+- On local, Kubernetes stores Persistent Volumes in a slice of our hard drive.
+- On Production, Kubernetes stores Persistent Volumes on a Cloud Provider, e.g., Google Cloud Persistent Disk, Azure File, Azure Disk, AWS Block Store.
+  - Depending on the Cloud Provider, Kubernetes has a default storage class on the selected Cloud Provider. You can specifically mention which storage to use after that.
+  - [Storage Classes Options](https://kubernetes.io/docs/concepts/storage/storage-classes/)
+
+```
+# where kubernetes stores persistent volume
+➜  project-multi-container-k8s git:(main) kubectl get storageclass
+NAME                 PROVISIONER                RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+standard (default)   k8s.io/minikube-hostpath   Delete          Immediate           false                  3d
+
+➜  project-multi-container-k8s git:(main) ✗ kubectl describe storageclass
+...
+Provisioner:           k8s.io/minikube-hostpath
+```
+
+### Applying a PVC
+
+```
+➜  project-multi-container-k8s git:(main) ✗ kubectl get pvc
+NAME                               STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+database-persistent-volume-claim   Bound    pvc-e95c8522-2c2b-44c8-8338-3f3a30e1bd19   2Gi        RWO            standard       2m3s
+```
+
+### Defining Environment Variables
+
+- Need to connect multi-worker to Redis and multi-server to Redis and Postgres through ClusterIP Service
+  - REDIS_HOST and PG_HOST environment variables
+  ```yaml
+  metadata:
+  name: redis-cluster-ip-service
+  ```
+  - `REDIS_HOST: redis-cluster-ip-service`
+
+```yaml
+spec:
+  containers:
+    - name: worker
+      image: stephengrider/multi-worker
+      env:
+        - name: REDIS_HOST
+          value: redis-cluster-ip-service
+```
+
+### Creating an Encoded Secret
+
+- `Secrets` Object Type
+  - Securely stores a piece of information in the cluster, such as a database password
+  - Use this in environment variable of YAML config file
+- Creating a secret (Imperative Command)
+  - `kubectl create secret generic pgpassword --from-literal PGPASSWORD=password123`
+
+```
+➜  project-multi-container-k8s git:(main) ✗ kubectl create secret generic pgpassword --from-literal PGPASSWORD=password123
+secret/pgpassword created
+➜  project-multi-container-k8s git:(main) ✗ kubectl get secrets
+NAME         TYPE     DATA   AGE
+pgpassword   Opaque   1      7s
+```
