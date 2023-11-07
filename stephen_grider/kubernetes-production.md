@@ -211,7 +211,25 @@ spec:
       storage: 2Gi # 2 GB of space
 ```
 
+### PVC Access Modes
+
+<img src="./diagrams/PVC-access-modes.png" />
+
+```yaml
+spec:
+  accessModes:
+    - ReadWriteOnce
+```
+
 ### Where Does Kubernetes Allocate Persistent Volumes?
+
+<img src="./diagrams/volumes-vs-pvc.png" />
+<img src="./diagrams/pvc-1.png" />
+<img src="./diagrams/pvc-2.png" />
+<img src="./diagrams/pvc-3.png" />
+<img src="./diagrams/pvc-4.png" />
+<img src="./diagrams/pvc-5.png" />
+<img src="./diagrams/pvc-6.png" />
 
 - On local, Kubernetes stores Persistent Volumes in a slice of our hard drive.
 - On Production, Kubernetes stores Persistent Volumes on a Cloud Provider, e.g., Google Cloud Persistent Disk, Azure File, Azure Disk, AWS Block Store.
@@ -239,6 +257,9 @@ database-persistent-volume-claim   Bound    pvc-e95c8522-2c2b-44c8-8338-3f3a30e1
 
 ### Defining Environment Variables
 
+<img src="./diagrams/env-1.png" />
+<img src="./diagrams/env-3.png" />
+
 - Need to connect multi-worker to Redis and multi-server to Redis and Postgres through ClusterIP Service
   - REDIS_HOST and PG_HOST environment variables
   ```yaml
@@ -258,6 +279,9 @@ spec:
 ```
 
 ### Creating an Encoded Secret
+
+<img src="./diagrams/secret-k8s.png" />
+<img src="./diagrams/env-2.png" />
 
 - `Secrets` Object Type
   - Securely stores a piece of information in the cluster, such as a database password
