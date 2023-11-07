@@ -296,3 +296,142 @@ secret/pgpassword created
 NAME         TYPE     DATA   AGE
 pgpassword   Opaque   1      7s
 ```
+
+## `LoadBalancer` and `Ingress` Services
+
+### `LoadBalancer` Service
+
+<img src="./diagrams/ingress-9.png" />
+
+- `LoadBalancer` service in Kubernetes is used to distribute incoming network traffic across a set of Pods based on a defined set of rules.
+- It allows external traffic to access a specific set of Pods, but it can be configured to distribute traffic to multiple sets of Pods if needed.
+- In our application, where we need to allow traffic to reach 2 sets of Pods (multi-client and multi-server), we can achieve this by creating 2 separate services or by configuring the `LoadBalancer` service to route traffic to both sets of Pods.
+- Using an `Ingress` Service can be a better choice for managing external traffic to multiple sets of Pods, as it provides more advanced routing and configuration options compared to a simple `LoadBalancer` Service.
+
+## Handling Traffic with Ingress Controllers
+
+<img src="./diagrams/ingress-1.png" />
+<img src="./diagrams/ingress-2.png" />
+<img src="./diagrams/ingress-4.png" />
+<img src="./diagrams/ingress-5.png" />
+<img src="./diagrams/ingress-6.png" />
+<img src="./diagrams/ingress-7.png" />
+
+- Use `Ingress` Service instead of `NodePort` service in production.
+- `Ingress` Service exposes a set of services to the outside world.
+  - NGINX Ingress
+- Setup of `ingress-nginx` changes depending on your environment (local, GC, AWS, Azure)
+  - We are going to set up `ingress-nginx` on local and GC.
+- **Controller**
+  - Any type of object that constantly works to make some desired state a reality inside of the Kubernetes Cluster.
+  - Ingress Controller looks at our current state and compares it with the desired state (Ingress Config - routing rules), then it tries to make it a reality to produce the new state.
+
+### Ingress-NGINX on Google Cloud
+
+<img src="./diagrams/ingress-8.png" />
+
+- Specify ingress config to Deployment (nginx-controller/nginx pod)
+  - LoadBalancer Service will be used and connected to Deployment on Google Cloud
+- **Google Cloud Load Balancer**
+  - Default Load Balancer created when we use ingress-nginx on Google Cloud. This is a cloud native load balancer.
+- `default-backend-pod`
+  - This Deployment will be created automatically by Google Cloud to perform health checks and ensure that the application is working as it should be.
+- Helpful Links
+  - [Understanding ingress-nginx](https://www.joyfulbikeshedding.com/blog/2018-03-26-studying-the-kubernetes-ingress-system.html)
+  - [Installation of ingress-nginx](https://kubernetes.github.io/ingress-nginx/deploy/#quick-start)
+
+### Setting Up Ingress Locally with Minikube
+
+<img src="./diagrams/ingress-3.png" />
+<img src="./diagrams/ingress-11.png" />
+
+- `kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml`
+- `default-http-backend` for health checks
+- `Deployment` --> Ingress NGINX Controller
+
+```
+➜  project-multi-container-k8s git:(main) ✗ kubectl get pods -n ingress-nginx
+NAME                                        READY   STATUS      RESTARTS   AGE
+ingress-nginx-admission-create-bf8d4        0/1     Completed   0          23m
+ingress-nginx-admission-patch-65jdf         0/1     Completed   1          23m
+ingress-nginx-controller-778d4c6454-z2zfj   1/1     Running     0          23m
+```
+
+---
+
+#### Issue with testing `localhost` on browser with Ingress
+
+## <img src="./diagrams/docker-desktop-default-port-80.png" />
+
+### `Ingress` Service
+
+- [Kubernetes Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/)
+
+### Testing `Ingress` Service Locally
+
+- Uses `http` now with Fake Certificate
+- Run `minikube dashboard` to view Kubernetes Cluster on minikube with dashboard on browser.
+
+### View Docker Desktop Kubernetes Dashboard
+
+1. Grab the most current script from the installation instructions:
+
+- [Installation Instructions](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#deploying-the-dashboard-ui)
+- `kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml`
+
+2. Create a `dash-admin-user.yaml` file and paste the following:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kubernetes-dashboard
+```
+
+3. Apply the `dash-admin-user` configuration
+
+- `kubectl apply -f dash-admin-user.yaml`
+
+4. Create `dash-clusterrole-yaml` file and paste the following:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: admin-user
+    namespace: kubernetes-dashboard
+```
+
+5. Apply ClusterRole configuration:
+
+`kubectl apply -f dash-clusterrole.yaml`
+
+6. In the terminal, run `kubectl proxy`
+
+- Must keep this terminal window open and the proxy running.
+
+7. Visit the following URL in your browser to access your dashboard:
+
+- `http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/`
+
+8. Obtain the token for this user by running the following in your terminal:
+
+- First, run `kubectl version` in a new terminal window.
+  - If your Kubernetes server version is v1.24 or higher, run `kubectl -n kubernetes-dashboard create token admin-user`
+  - If your Kubernetes server version is older than v1.24, run `kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"`
+
+9. Copy the token from the above output and use it to login at the dashboard
+
+- Be careful not to copy any extra spaces or output such as the trailing % you may see in your terminal.
+
+10. After a successful login, you should now be redirected to the Kubernetes Dashboard.
+
+- The above steps can be found in the official documentation: https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md
