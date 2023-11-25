@@ -137,3 +137,22 @@ kubectl edit replicaset <replicaset_name>
 kubectl edit rs <replicaset_name>
 ```
 
+### Deployment
+
+```
+# Shows all the objects created in the Kubernetes Cluster
+kubectl get all
+
+kubectl get deployments
+
+kubectl get pods
+
+kubectl describe deployment <deployment_name>
+```
+
+```
+kubectl create deployment --help
+
+# Create a deployment named my-dep that runs the nginx image with 3 replicas
+kubectl create deployment my-dep --image=nginx --replicas=3
+```
