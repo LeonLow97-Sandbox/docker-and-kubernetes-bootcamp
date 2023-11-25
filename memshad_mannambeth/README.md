@@ -20,3 +20,60 @@ kubectl get pods -o wide
 # Detailed description of the specific pod named "nginx", offering insights into its configuration, events, and current status within the Kubernetes cluster
 kubectl describe pod nginx
 ```
+
+### YAML
+
+- Equal number of spaces
+
+```yaml
+# Key Value Pair
+Fruit: Apple
+Vegetable: Carrot
+
+# Array / Lists
+Fruits:
+  - Orange
+  - Apple
+
+Vegetables:
+  - Carrot
+  - Tomato
+
+# Dictionary / Map
+Banana:
+  Calories: 105
+  Fat: 0.4g
+Grapes:
+  Calories: 62
+  Fat: 0.3g
+
+# List of Dictionaries
+- Banana:
+    Calories: 105
+    Fat: 0.4g
+- Grape:
+    Calories: 62
+    Fat: 0.3g
+```
+
+### Pods with YAML
+
+- Install VS Code Extension "YAML" by Red Hat
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+    tier: frontend
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+```
+
+- Run `kubectl apply -f pod.yaml` to create the pod
+- `kubectl describe pod nginx`
+
