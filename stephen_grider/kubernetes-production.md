@@ -449,6 +449,7 @@ subjects:
   - After a number of days, need to genera te a new certificate for authentication
   - Obtain a TLS Certificate
 - Use helm to automate this authentication process between Kubernetes Cluster and LetsEncrypt.
+- Add 2 config files for Certificate and Issuer
 - Using GCP Cloud Shell to install Cert Manager using Helm on Google Cloud
   - [Official Docs for Reference](https://cert-manager.io/docs/installation/helm/#steps)
   1. Add the Jetstack Helm Repository
@@ -497,3 +498,23 @@ docker stop <container_id>
 # Clearing the Build Cache
 docker system prune
 ```
+
+### Local Development with Skaffold
+
+<img src="./diagrams/skaffold.png" />
+
+- Skaffold is very good for local development on Kubernetes Clusters
+- Previously, we made use of docker-compose with volumes to map between our local directory and the container. So any changes to the source code will be reflected directly to the container.
+- However, we do not have such a mapping for our Kubernetes Cluster.
+- Skaffold
+  - Mode 1
+    - docker build
+    - slow because need to rebuild image
+  - Mode 2
+    - take the source code changes and inject into Pod
+- [Install Skaffold](https://skaffold.dev/docs/getting-started/#installing-skaffold)
+  - `brew install skaffold`
+- Add a Skaffold config file
+- [Skaffold syntax reference](https://skaffold.dev/docs/references/yaml/)
+- Start Skaffold by running `skaffold dev`
+- Stop Skaffold by `CTRL + C`

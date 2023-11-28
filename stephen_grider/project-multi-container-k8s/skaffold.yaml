@@ -1,0 +1,43 @@
+apiVersion: skaffold/v2beta12
+kind: Config
+deploy:
+  kubectl:
+    manifests:
+      # applied to kubernetes cluster when a change is made
+      # when skaffold is stopped, it removes all these Pods in the directory
+      # if you have volumes or persistent data, remove those config files from manifests
+      - ./k8s/*
+build:
+  local:
+    push: false # not pushing to any repository upon changes
+  artifacts:
+    - image: rallycoding/client-skaffold
+      context: client
+      docker:
+        dockerfile: Dockerfile.dev
+      # telling skaffold to use Mode 2
+      sync:
+        # inject any javascript changes into the running Pod
+        manual:
+          - src: 'src/**/*.js'
+            dest: .
+          - src: 'src/**/*.css'
+            dest: .
+          - src: 'src/**/*.html'
+            dest: .
+    - image: rallycoding/worker-skaffold
+      context: worker
+      docker:
+        dockerfile: Dockerfile.dev
+      sync:
+        manual:
+          - src: '*.js'
+            dest: .
+    - image: rallycoding/server-skaffold
+      context: server
+      docker:
+        dockerfile: Dockerfile.dev
+      sync:
+        manual:
+          - src: '*.js'
+            dest: .
