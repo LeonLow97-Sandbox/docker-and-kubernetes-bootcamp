@@ -435,3 +435,65 @@ subjects:
 10. After a successful login, you should now be redirected to the Kubernetes Dashboard.
 
 - The above steps can be found in the official documentation: https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md
+
+## HTTPS Setup with Kubernetes
+
+<img src="./diagrams/k8s-cert-1.png" />
+<img src="./diagrams/k8s-cert-2.png" />
+<img src="./diagrams/k8s-cert-3.png" />
+<img src="./diagrams/k8s-cert-4.png" />
+
+- Setting up HTTPS requires a domain name purchase ($10 USD)
+  - domains.google.com
+- **LetsEncrypt** service to get free certificates
+  - After a number of days, need to genera te a new certificate for authentication
+  - Obtain a TLS Certificate
+- Use helm to automate this authentication process between Kubernetes Cluster and LetsEncrypt.
+- Using GCP Cloud Shell to install Cert Manager using Helm on Google Cloud
+  - [Official Docs for Reference](https://cert-manager.io/docs/installation/helm/#steps)
+  1. Add the Jetstack Helm Repository
+  - `helm repo add jetstack https://charts.jetstack.io`
+  2. Update your local Helm chart repository cache
+  - `helm repo update`
+  3. Install the cert-manager Helm chart:
+  ```
+  helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.8.0 \
+  --set installCRDs=true
+  ```
+- The secret in Certificate is created automatically.
+- CertManager checks if Certificate and Issuer are present and reads data from them. At this point, the TLS Certificate has already been generated from LetsEncrypt
+- [ClusterIssuer](https://cert-manager.io/docs/configuration/acme/#creating-a-basic-acme-issuer)
+- No Resources Found
+  - If you have deployed your issuer and certificate manifests to GCP and you are getting No Resources Found when running kubectl get certificate, deploying the updated Ingress should trigger the certificate to be issued.
+  - `kubectl get certificates` shows all certificates in the cluster
+  - `kubectl describe certificates`
+  - `kubectl get secrets`
+- URL Combinations that should redirect to https
+  - https://www.domain.com
+  - https://domain.com
+  - http://www.domain.com
+  - http://domain.com
+
+### Local Environment Cleanup
+
+```
+# Deleting Pods, Deployments, Services from the Multi K8's Project
+kubectl delete -f k8s/
+
+# Stopping Minikube
+minikube stop
+
+# To fully delete the cluster
+minikube delete
+
+# Stop Running Containers
+docker ps
+docker stop <container_id>
+
+# Clearing the Build Cache
+docker system prune
+```
