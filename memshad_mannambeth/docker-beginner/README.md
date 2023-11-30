@@ -19,6 +19,7 @@
 - Docker Image vs Container
   - Image is a package, template or a plan.
   - Containers are running instances of images and have their own set of processes.
+  - A container exits if the process inside it crashes or stops. Thus `docker run ubuntu` will exit immediately because a container is not meant to run an OS.
 
 ## Docker Commands
 
@@ -92,3 +93,36 @@ CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS  
   - `docker login` login to docker hub registry
   - `docker push leonlow/flask-app` push image to docker hub
 
+## Environment Variables
+
+- `docker run -e APP_COLOR=blue <image_name>` set an environment variable to the container
+- `docker inspect <container_name>` to find the environment variable running on the container
+
+## Command vs Entrypoint
+
+- `CMD` program that runs within the container
+  - `docker run ubuntu [COMMAND]` like `docker run ubuntu sleep 5`
+  - Can also create a Dockerfile to run the `sleep 5` command but as you can see, the number of seconds specified is hardcoded to be 5.
+
+  ```dockerfile
+  FROM ubuntu
+
+  CMD sleep 5
+  ```
+
+- `ENTRYPOINT`
+  - docker run ubuntu-sleeper 10
+  - If not specified like this `docker run ubuntu-sleeper`, this throws an error.
+  ```dockerfile
+  FROM ubuntu
+
+  ENTRYPOINT ["sleep"]
+  ```
+  - Thus, we need to add a default number of seconds. Combine both `ENTRYPOINT` and `CMD` together
+  ```dockerfile
+  FROM ubuntu
+
+  # final command --> sleep 5
+  ENTRYPOINT ["sleep"]
+  CMD ["5"]
+  ```
