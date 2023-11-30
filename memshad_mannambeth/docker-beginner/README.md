@@ -72,3 +72,23 @@ CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS  
 - In the case of a web server like Nginx (`nginx:alpine`), you can access the server from a web browser using either `http://localhost:3456` or `http://localhost:38080`, depending on which port you prefer to use for communication with the containerized Nginx Server.
 
 ---
+
+## docker images
+
+- `docker build . -f Dockerfile -t leonlow/my-app` building the image with dockerfile and tagging the image
+- `docker push leonlow/my-app` push image to Docker registry like Docker Hub
+- builds the image layer by layer in the Dockerfile
+- layers that were built are cached by Docker, thus rebuilding the image is faster
+    1. Base Ubuntu Layer (OS)
+    1. Changes in apy packages
+    1. Changes in pip packages
+    1. Source code
+    1. Update entrypoint with "flask" command
+- building image with Dockerfile
+  - `docker build .` inside `flask-image` directory
+  - `docker build . -t flask-app` tagging image
+  - `docker run -p 3000:3000 flask-app`
+- Pushing image to registry
+  - `docker login` login to docker hub registry
+  - `docker push leonlow/flask-app` push image to docker hub
+
