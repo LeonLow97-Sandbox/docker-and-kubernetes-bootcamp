@@ -80,11 +80,11 @@ CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS  
 - `docker push leonlow/my-app` push image to Docker registry like Docker Hub
 - builds the image layer by layer in the Dockerfile
 - layers that were built are cached by Docker, thus rebuilding the image is faster
-    1. Base Ubuntu Layer (OS)
-    1. Changes in apy packages
-    1. Changes in pip packages
-    1. Source code
-    1. Update entrypoint with "flask" command
+  1. Base Ubuntu Layer (OS)
+  1. Changes in apy packages
+  1. Changes in pip packages
+  1. Source code
+  1. Update entrypoint with "flask" command
 - building image with Dockerfile
   - `docker build .` inside `flask-image` directory
   - `docker build . -t flask-app` tagging image
@@ -101,6 +101,7 @@ CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS  
 ## Command vs Entrypoint
 
 - `CMD` program that runs within the container
+
   - `docker run ubuntu [COMMAND]` like `docker run ubuntu sleep 5`
   - Can also create a Dockerfile to run the `sleep 5` command but as you can see, the number of seconds specified is hardcoded to be 5.
 
@@ -111,14 +112,18 @@ CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS  
   ```
 
 - `ENTRYPOINT`
+
   - docker run ubuntu-sleeper 10
   - If not specified like this `docker run ubuntu-sleeper`, this throws an error.
+
   ```dockerfile
   FROM ubuntu
 
   ENTRYPOINT ["sleep"]
   ```
+
   - Thus, we need to add a default number of seconds. Combine both `ENTRYPOINT` and `CMD` together
+
   ```dockerfile
   FROM ubuntu
 
@@ -126,3 +131,114 @@ CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS  
   ENTRYPOINT ["sleep"]
   CMD ["5"]
   ```
+
+## docker compose
+
+- Configuration in YAML file
+- Run multiple containers at once to bring up the entire application stack
+- Runs on a single Docker Host
+- Without `docker-compose`,
+  - we use `docker run` but the containers are not linked together.
+  - use `docker run --links` to link the containers but this might be deprecated in future
+
+```
+docker run -d --name=redis redis
+docker run -d --name=db postgres
+docker run -d --name=vote -p 5000:80 --link redis:redis voting-app
+docker run -d --name=result -p 50001:80 --link db:db result-app
+docker run -d --name=worker --link db:db --link redis:redis worker
+```
+
+- With docker-compose.yml
+
+```yaml
+version: 3
+
+services:
+  redis:
+    image: redis
+  db:
+    image: postgres:9.4
+  vote:
+    image: voting-app
+    ports:
+      - '5000:80'
+    depends_on:
+      - redis
+  result:
+    image: result-app
+    ports:
+      - '5001:80'
+    depends_on:
+      - db
+  worker:
+    image: worker
+    depends_on:
+      - redis
+      - db
+```
+
+- `docker-compose` commands
+  - `docker-compose up` to bring up the services
+  - `docker-compose --build`
+
+```yaml
+# Using a pre-built image from the registry named "voting-app"
+vote:
+  image: voting-app
+
+# Building the image using the Dockerfile in the specified directory "./vote"
+vote:
+  build: ./vote
+```
+
+- `docker compose` versions
+
+```yaml
+version: 3
+```
+
+- Networks in `docker compose`
+
+```yaml
+version: 3
+services:
+  redis:
+    image: redis
+    networks:
+      - back-end
+  db:
+    image: postgres:9.4
+    networks:
+      - back-end
+
+  vote:
+    image: voting-app
+    networks:
+      - front-end
+      - back-end
+  result:
+    image: result
+    networks:
+      - front-end
+      - back-end
+
+networks:
+  front-end:
+  back-end:
+```
+
+## Networking in Docker Compose
+
+- When you define services in a `docker-compose.yml` file and bring them up using `docker-compose up`, all services by default are connected to the **same Docker network**, which allows them to communicate with each other using their **service names**.
+- The DNS Resolution via service names helps in simplifying inter-service communication without the need to manage IP addresses directly.
+
+---
+
+- References:
+  - https://docs.docker.com/compose/
+  - https://docs.docker.com/engine/reference/commandline/compose/
+  - https://github.com/dockersamples/example-voting-app
+
+---
+
