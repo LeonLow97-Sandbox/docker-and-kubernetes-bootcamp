@@ -92,6 +92,7 @@ CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS  
 - Pushing image to registry
   - `docker login` login to docker hub registry
   - `docker push leonlow/flask-app` push image to docker hub
+- `docker history <image_name>` to get the history of commands to see how an image was built, can see each instruction in the Dockerfile and the respective size for each of that layer.
 
 ## Environment Variables
 
@@ -296,7 +297,7 @@ networks:
   - `docker run -v data_volume:/var/lib/mysql sql` mounting the volume to the container directory, data written to `/var/lib/mysql` inside the container will be stored on the Docker Host. If `data_volume` is not created on the Docker Host, it will automatically create.
   - `docker -v /data/mysql:/var/lib/mysql mysql` bind mount
     - `docker run --mount type=bind,source=/data/mysql,target=/var/lib/mysql mysql`
-- Docker uses storage drivers like AUFS, ZFS, BTRFS, Device Mapper, etc. to maintain this layered architecture. Docker chooses the storage driver based on the Operating System.
+- Docker uses storage drivers like AUFS, ZFS, BTRFS, Device Mapper, overlay2, etc. to maintain this layered architecture. Docker chooses the storage driver based on the Operating System.
 
 ---
 
@@ -322,3 +323,87 @@ networks:
   - **Ease of use**: Bind mounts are simpler to set up and use, especially for quick changes and local **development**. Volumes provide a more structured and controlled environment for managing persistent data and is good for **production**
 
 ---
+
+- `docker info | grep "Storage Driver"` find out the storage driver used for the operating system.
+- To access Docker directory on Mac (Note: these directories are managed by Docker):
+  - `docker run -it --privileged --pid=host debian nsenter -t 1 -m -u -n -i sh`
+  - Go to `/var/lib/docker` and `ls`
+- Consumed space by images on disk
+  - `docker images` shows a SIZE column but it is not the consumed space by the images. It is the virtual size of the image, which includes both the initial size and the additional layers that contribute to its construction.
+  - `docker system df` this command shows the actual consumed space on the disk by images, containers, volumes and other resources.
+    - `docker system df -v` to view the individual sizes consumed by each images, containers, volumes and the overall data usage.
+
+## Docker Networking
+
+- 3 networks are created when a container is created: Bridge, None, Host
+- Bridge
+  - The default network created by Docker is called the **bridge network**. It's an internal network that enables communication between containers on the same host. The default subnet used is often `172.17.0.0/16`
+  - Containers connected to the bridge network can communicate with each other using their internal IP Addresses
+  - `docker run ubuntu` creates a new container using the default bridge network, allowing the container to communicate with other containers on the same bridge network.
+- None
+  - This network isolates the container from all networking. Especially, the container has no network interfaces.
+  - Useful in scenarios where a container does not need networking capabilities at all. It does not have access to external network or other containers
+  - `docker run --network=none ubuntu` creates a container without any networking capabilities, which can be beneficial in specific security or testing scenarios.
+- Host Network
+  - When a container uses the host network mode, it shares the network namespace with the host system,effectively using the host's networking directory.
+  - Therefore, when using `--network=host`, need to ensure that there are no port conflicts between the services running on the host and the services intended to run inside the container, as both will compete for the same port numbers within the **shared network namespace**.
+  - This mode can be beneficial for application requiring direct access to the host's network interfaces without any additional network isolation.
+  - `docker run --network=host ubuntu` creates a container that shares the network stack with the host, allowing the container to use the host's networking directly.
+- `docker inspect <container_name>` to view the type of network the container is on
+- Docker uses Linux namespaces to provide isolation for various resources within a container. Network namespaces are a fundamental component that enables containers to have their own network stack, including interfaces, routing tables, and firewall rules. This isolation ensures that each container has its own networking environment and does not interfere with other containers on the same host.
+- `docker network ls` to explore and identify the number of networks existing on your Docker system
+- `docker network rm <network_id>` to remove a network
+- Creating a new network using the bridge driver while allocatig the specified subnet and gateway, use the following command:
+
+```
+docker network create \
+  --driver=bridge \
+  --subnet=182.18.0.0/24 \
+  --gateway=182.18.0.1 \
+  mysql-network
+```
+
+## Docker on Windows
+
+- Docker on Windows using Docker toolbox
+  - No access to Linux Environment. It does not provide direct access to a native Linux environment on Windows. Instead, it installs a Linux-based Virtual Machine (VM) using Oracle VirtualBox, where Docker runs.
+  - Docker Toolbox includes Oracle VirtualBox, Docker Engine, Docker Machine, Docker Compose, and Kitematic GUI
+  - Operating System must be 64-bit operating, Windows 7 or higher, Virtualization is enabled
+- Docker Desktop for Windows
+  - Uses Microsoft Hyper-V to run a Linux-Based VM for Docker rather than Oracle VirtualBox used in Docker Toolbox
+  - Supports both Linux Containers (default) and Windows Containers (must be specified).
+- Windows Containers:
+  - Runs on Windows Server
+  - Offers Hyper-V Isolation for better security and containerization.
+- VirtualBox or Hyper-V
+  - Both cannot coexist on the same Docker Host on Windows
+  - Have to perform some migration to switch between the 2
+- Docker Desktop for Windows provides a more integrated and native experience, utilizing Hyper-V and offering both Linux and Windows container support directly on the Windows OS.
+- Docker Toolbox is an older approach used on older Windows versions lacking Hyper-V support or in cases where Hyper-V is not compatible or enabled.
+- Both Docker Toolbox and Docker Desktop for Windows facilitate Docker usage on Windows, but Docker Desktop provides a more streamlined experience for running both Linux and Windows containers by utilizing Hyper-V technology directly on the Windows OS.
+
+---
+
+### Install Docker on Windows
+
+1. Install Docker CE for Windows (https://www.docker.com/docker-windows)
+1. Prompts if you want to enable Hyper-V, click OK (Hyper-V is a lightweight Linux distribution)
+1. Run `docker version` to check if installed and the `OS/Arach` should be linux/amd64
+
+### Switching the Windows Containers
+
+1. Right-click Docker Icon --> Switch to Windows containers (by default it is running on Linux containers)
+1. Click OK and the computer will restart
+1. Run `docker version` and the `OS/Arch` should be windows/amd64. Windows based containers are larger in size as compared to Linux based containers
+
+---
+
+## Docker on Mac
+
+- Docker on Mac using Docker toolbox
+  - Run Linux containers on Mac
+  - Install Oracle VirtualBox
+- Docker for Mac
+  - Uses HyperKit instead for VirtualBox
+  - Creates Linux system and have Docker run on top of it
+  - Running Linux Containers on Mac
