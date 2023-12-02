@@ -242,3 +242,20 @@ networks:
 
 ---
 
+## Docker Registry
+
+- Docker Registry
+- Docker Engine interacts with Docker Hub (registry) by default
+- Central repository for images
+- `image: nginx` is actually `image: nginx/nginx`
+  - `user/repository` or `image/repository`
+  - default registry if not specified is docker hub, e.g., `image: docker.io/nginx/nginx`
+- Private Registry
+  - `docker login private-registry.io` login to private registry
+  - `docker run private-registry.io/apps/internal-app`
+- Deploy Private Registry (the private registry is localhost:5000)
+  1. `docker run -d -p 5000:5000 --name registry registry:2` deploying a docker registry container, can specify `--restart always` so that the container automatically restarts if it stops for any reason.
+  1. `docker tag my-image localhost:5000/my-image` tag images for the registry
+  1. `docker push localhost:5000/my-image` pushing image to private registry
+  1. `docker pull localhost:5000/my-image` pull image from private registry using localhost
+  1. `docker pull 192.168.56.100:5000/my-image` pull the image from the private registry using private ip
