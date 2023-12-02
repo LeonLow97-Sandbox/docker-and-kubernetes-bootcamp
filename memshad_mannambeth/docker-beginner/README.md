@@ -259,3 +259,26 @@ networks:
   1. `docker push localhost:5000/my-image` pushing image to private registry
   1. `docker pull localhost:5000/my-image` pull image from private registry using localhost
   1. `docker pull 192.168.56.100:5000/my-image` pull the image from the private registry using private ip
+
+## Docker Engine
+
+- Docker engine contains Docker Daemon, REST API and Docker CLI
+- Docker Daemon manges Docker Objects like images, containers, networks
+- REST API for talking to the Docker Daemon
+- Docker CLI is used to run commands and it uses the REST API to interact with the Docker Daemon
+- Containerization under the hood in Docker
+  - Docker uses namespace to isolate workspace
+    - Process ID, Network, InterProcess, Unix Timesharing and Mount are created in their own namespace, thereby providing isolation within their own containers.
+    - Each namespace instance operates independently within its container, providing isolation from the host and other containers.
+    - **PID Namespace**: Within a Linux system, there can be multiple processes running with their respective process IDs (PIDs). When Docker starts processes within a container, it begins with PID 1, PID 2 and so on, specific to that container's namespace. However, these PIDs do not directly correlate with PIDs on the host. They are isolated and managed within the container's PID namespace. The underlying Linux system creates new PIDs (like PIDs 4 and 5) to manage these processes within the container, but these new PIDs are separate from the host's PIDs.
+- Control Groups
+  - **Resource Allocation**: Control groups (cgroups) are used to manage and restrict the hardware resources (CPU, memory, disk I/O, etc.) allocated to each container. Docker allows users to specify resource constraints during container creation.
+  - Use control groups to restrict the amount of hardware resources allocated to each container
+  - `docker run --cpus=.5 ubuntu` limits container to use half a CPU core
+  - `docker run --memory=100m ubuntu` limits container to memory of 100MB
+- [Docker Runtime options with Memory, CPUs and GPUs](https://docs.docker.com/config/containers/resource_constraints/)
+- Demo
+  1. `docker run -d --rm -p 8888:8080 tomcat:8.0`
+  1. `docker ps`
+  1. `docker exec <container_id> ps -eaf` to view the running processes PID in the container and you should see the process `docker-java-home` in the container
+  1. `ps -eaf | grep docker-java-home` to view the `docker-java-home` that is running on the underlying host
