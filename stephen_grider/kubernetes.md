@@ -24,8 +24,8 @@
   - tell a virtual machine or node what set of containers it should be running and manage what the node is doing.
   - used locally and production
 - minikube
-  - development kubernetes cluster
-  - to create and run a kubernetes cluster on local machine
+  - to create a single-node kubernetes cluster locally on a developer's machine
+  - allows developers to test their applications against a Kubernetes environment locally before deploying them to a production cluster.
 
 ### Install kubectl
 
@@ -219,7 +219,7 @@ kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP          12
 
 - **Imperative Deployments**:
   - Involves giving explicit step-by-step instructions to Kubernetes on how to create and manage resources.
-  - Uses imperative commands like `kubectl create`, `kubectl apply` or `kubectl run` to crete and manage objects in the Kubernetes Cluster.
+  - Uses imperative commands like `kubectl create`, `kubectl apply` or `kubectl run` to create and manage objects in the Kubernetes Cluster.
   - Specify the exact state you want your resources to be in, and Kubernetes performs the necessary actions to achieve that state.
   - Often used for initial setup and resource creation, but they may not be ideal for maintaining complex, long-term applications and managing updates.
 - **Declarative Deployments**:
@@ -421,7 +421,7 @@ deployment.apps/client-deployment unchanged
 
   1. Manually delete pods to get the deployment to recreate them with the latest version. (Bad because you might accidentally delete the wrong pod and the action is manual)
   2. Tag built images with a real version n umber and specify that version in the config file. (Bad because it adds an extra step in the production deployment process - have to tag version number in config file and in the new image created).
-  3. [Recommended] Use an **imperative command** to update the image version thr deployment should use
+  3. [Recommended] Use an **imperative command** to update the image version the deployment should use
 
   - Rebuilt image
   - Tag the image with a version number and push to Docker Hub

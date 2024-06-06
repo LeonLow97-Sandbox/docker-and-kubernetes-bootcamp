@@ -19,29 +19,29 @@
 
 ### Operating System
 
-- If we look at operating systems like Ubuntu, Fedora, Suse or CentOS, they consist of an **OS Kernel and a set of software**. 
+- If we look at operating systems like Ubuntu, Fedora, Suse or CentOS, they consist of an **OS Kernel and a set of software**.
 - The operating system kernel is responsible for interacting with the underlying hardware, while the OS Kernel remains the same, which is Linux.
 - The software above the OS Kernel (e.g., Ubuntu) makes these operating systems different. The software may consist of different user interface drivers, compilers, file managers, developers tools, etc.
 - There is a common Linux Kernel shared across all operating systems and some custom software that differentiates operating systems from each other.
 - **Docker containers share the underlying kernel**
-    - For example, we have a system with an Ubuntu OS with Docker installed on it and Docker can run any OS on top of it as long as they are based on the same Kernel (Linux).
-    - If the underlying operating system is Ubuntu, Docker can run a container based on another distribution like Debian, Suse or CentOS.
-    - Docker utilizes the underlying kernel of Docker host, which works with all the operating systems above.
+  - For example, we have a system with an Ubuntu OS with Docker installed on it and Docker can run any OS on top of it as long as they are based on the same Kernel (Linux).
+  - If the underlying operating system is Ubuntu, Docker can run a container based on another distribution like Debian, Suse or CentOS.
+  - Docker utilizes the underlying kernel of Docker host, which works with all the operating systems above.
 - What is an OS that does not share the same OS Kernel (Linux)?
-    - Windows.
-    - You won't be able to run a Windows based container on a Docker host with Linux OS on it. For that you would require *Docker on a Windows Server*.
-    - Is it a disadvantage for not being able to run another kernel on the OS? No. Unlike Hypervisors, Docker is not meant to virtualize and run different Operating Systems and Kernels on the same hardware.
-    - The main purpose of Docker is to containerize applications, to ship and run them.
+  - Windows.
+  - You won't be able to run a Windows based container on a Docker host with Linux OS on it. For that you would require _Docker on a Windows Server_.
+  - Is it a disadvantage for not being able to run another kernel on the OS? No. Unlike Hypervisors, Docker is not meant to virtualize and run different Operating Systems and Kernels on the same hardware.
+  - The main purpose of Docker is to containerize applications, to ship and run them.
 - **Differences between Virtual Machines and Containers**
-    - For Docker, we have the underlying hardware infrastructure, operating system and Docker installed on the OS.
-    - Docker can then manage the containers that run with libraries and dependencies alone.
-    - For Virtual Machines, we have the underlying hardware, hypervisor like ESX or virtualization of some kind. 
-        - Each virtual machine has its **own operating system** inside it, the dependencies and the application.
-        - This overhead causes higher utilization of underlying resources as there are multiple virtual operating systems and kernels running.
-        - The virtual machines also consume higher disk space as each VM is heavy and is usually GB in size.
-    - Docker containers are lightweight and are usually MB in size.
-    - Docker containers boot up faster, usually in a matter of seconds, whereas virtual machines, takes minutes to boot up as it needs to boot up the entire operating system.
-    - Docker has less isolation as more resources are shared between containers like the OS Kernel, whereas VMs have complete isolation from each other. Since VMs don't rely on the underlying operating system or kernel, you can have different types of operating systems such as Linux based or Windows based on the same hypervisor, whereas it is not possible on a single Docker Host.
+  - For Docker, we have the underlying hardware infrastructure, operating system and Docker installed on the OS.
+  - Docker can then manage the containers that run with libraries and dependencies alone.
+  - For Virtual Machines, we have the underlying hardware, hypervisor like ESX or virtualization of some kind.
+    - Each virtual machine has its **own operating system** inside it, the dependencies and the application.
+    - This overhead causes higher utilization of underlying resources as there are multiple virtual operating systems and kernels running.
+    - The virtual machines also consume higher disk space as each VM is heavy and is usually GB in size.
+  - Docker containers are lightweight and are usually MB in size.
+  - Docker containers boot up faster, usually in a matter of seconds, whereas virtual machines, takes minutes to boot up as it needs to boot up the entire operating system.
+  - Docker has less isolation as more resources are shared between containers like the OS Kernel, whereas VMs have complete isolation from each other. Since VMs don't rely on the underlying operating system or kernel, you can have different types of operating systems such as Linux based or Windows based on the same hypervisor, whereas it is not possible on a single Docker Host.
 
 ### Docker Registry
 
@@ -58,6 +58,10 @@
 - An image is a package or a template.
 - Images are used to create 1 or more containers.
 - Containers are running instances of images that are isolated and have their own environments and set of processes.
+  - Each container is isolated in terms of its filesystem, processes, network, and other resources. This means that the processes running inside one container do not interfere with those in another container.
+  - Each container starts with the same base image layers, but any changes made within a container (like writing files) are stored in a container-specific writable layer. This means changes in one container do not affect others.
+  - Containers use namespaces and cgroups (control groups) in the Linux kernel to achieve process and resource isolation. Namespaces provide isolated views of system resources, while cgroups control and limit the resource usage of containers.
+  - Containers can have their own IP addresses and network interfaces, but they can also share network interfaces if configured to do so. Docker provides various network drivers (bridge, host, overlay) to manage container networking.
 
 ### Traditional Deployment of Applications
 
@@ -66,6 +70,5 @@
 - The Ops team uses this guide to set up the application. Since the Ops team did not develop the application on their own, they struggle with setting it up. When they hit an issue, they work with their developers to resolve it.
 - With Docker, a large portion of work involved in setting up the infrastructure is now in the hands of the developers in the form of a `Dockerfile`.
   - `Dockerfile` is used to create an image for the application
-- The Ops team can simple use the image to deploy the application. 
-- Since the image was already working when the developer built it and operations are not modifying it, it continues to work the same way then deployed in production. 
-
+- The Ops team can simple use the image to deploy the application.
+- Since the image was already working when the developer built it and operations are not modifying it, it continues to work the same way then deployed in production.

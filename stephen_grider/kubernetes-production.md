@@ -165,7 +165,7 @@ Listening
 - Volumes with Databases
 - Volume here is similar to Docker Volumes
 - Data is being stored in the file system of the Postgres Container. If Pod gets delete by Deployment, we will lose everything if that Container crashes. Deployment then created a new Pod but no data is being carried over from the old Pod that crashed. (BAD)
-- Thus, we create volumes. Postgres container writes data to volumes e instead. New Pod created has access to the volume that was used by the old Pod that crashed.
+- Thus, we create volumes. Postgres container writes data to volumes instead. New Pod created has access to the volume that was used by the old Pod that crashed.
 
 ```yaml
 metadata:

@@ -109,7 +109,7 @@ kubectl apply -f redis.yaml
   - `kubectl edit replicaset <replicaset_name>` opens up in Vim. Temporary file that is created by Kubernetes in memory to allow us to edit the configuration, we will see many additional fields here. Editing this file only updates the configuration in the Kubernetes cluster, it does not update the YAML file.
   - `kubectl scale replicaset <replicaset_name> --replicas=6` another way to scale up the pods without using Vim
 
-```
+```sh
 # Create ReplicaSet
 kubectl create -f replicaset.yaml
 
@@ -131,10 +131,17 @@ kubectl get replicasets -o wide
 kubectl explain replicaset
 ```
 
-```
+```sh
 # To edit image used in ReplicaSet
 kubectl edit replicaset <replicaset_name>
 kubectl edit rs <replicaset_name>
+```
+
+```sh
+## Update to 6 Replicas from 3 (multiple ways to do it)
+kubectl replace -f replicaset-definition.yml
+kubectl scale --replicas=6 -f replicaset-definition.yml
+kubectl scale --replicas=6 replicaset myapp-replicaset
 ```
 
 ### Deployment
