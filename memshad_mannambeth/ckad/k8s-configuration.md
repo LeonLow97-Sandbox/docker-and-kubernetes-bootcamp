@@ -86,6 +86,132 @@ spec:
 
 ```yaml
 command:
-    - "sleep"
-    - "1200"
+  - 'sleep'
+  - '1200'
 ```
+
+## Kubernetes Environment Variables
+
+- **Plain Key Value**: Adding environment variables in Pod definition file
+
+```yaml
+spec:
+  containers:
+    - name: simple-webapp-color
+      image: simple-webapp-color
+      ports:
+        - containerPort: 8080
+      env:
+        - name: APP_COLOR
+          value: pink
+```
+
+- **ConfigMap**
+
+```yaml
+env:
+  - name: APP_COLOR
+    valueFrom:
+      configMapKeyRef:
+```
+
+- **Secrets**
+
+```yaml
+env:
+  - name: APP_COLOR
+    valueFrom:
+      secretKeyRef:
+```
+
+## Kubernetes ConfigMaps
+
+- Instead of putting the environment variables key-value in the pod definition file (makes the file too large), we can put it in ConfigMap definition file.
+- When the Pod is created, ConfigMap will inject key-value pairs into the environment variables of the Pod for the application hosted as a container in the Pod.
+
+---
+
+### Create `ConfigMap`
+
+- Imperative
+
+```sh
+kubectl create configmap
+  <config_name> --from-literal=<key>=<value>
+
+kubectl create configmap \
+  app_config --from-literal=APP_ENV=Prod \
+             --from-literal=APP_NAME=my-app
+
+## by file
+kubectl create configmap
+  <config_name> --from-file=<path_to_file>
+
+kubectl create configmap \
+  app_config --from-file=app_config.properties
+```
+
+- Declarative
+  - `kubectl create -f config-map.yaml`
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app_config
+data:
+  APP_ENV: Prod
+  APP_NAME=my-app
+```
+
+- ConfigMap in Pods
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app
+  labels:
+    name: my-app
+spec:
+  containers:
+    - name: my-app
+      image: my-app
+      ports:
+        - containerPort: 8080
+      envFrom:
+        - configMapRef:
+          name: app_config
+```
+
+- Single Env
+
+```yaml
+env:
+  - name: APP_ENV
+    valueFrom:
+      configMapKeyRef:
+        name: app_config
+        key: APP_ENV
+```
+
+- Volumes
+
+```yaml
+volumes:
+- name: app-config-volume
+  configMap:
+    name: app_config
+```
+
+- Other Commands
+
+```sh
+## View ConfigMap
+kubectl get configmaps
+
+## Describe ConfigMap
+kubectl describe configmaps
+```
+
+---
