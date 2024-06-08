@@ -100,6 +100,9 @@ vi redis.yaml
 
 # apply the changes
 kubectl apply -f redis.yaml
+
+## Creating pod imperative command
+kubectl run nginx --image=nginx
 ```
 
 ### Replica Sets
@@ -266,6 +269,8 @@ docker run -d --name=worker --link db:db --link redis:redis worker
 - If you are new to VirtualBox or Vagrant, please follow this pre-requisites course to learn about it: https://www.youtube.com/watch?v=Wvf0mBNGjXY
 
 ---
+
 - Use kubeadm to set up a multi-node Kubernetes cluster locally
 - Use minikube to set up a single node Kubernetes cluster locally
+
 ---
