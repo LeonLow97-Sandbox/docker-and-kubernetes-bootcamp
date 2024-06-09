@@ -28,6 +28,13 @@ kubectl delete pod nginx
 
 ## Edit pod (imperative)
 kubectl edit pod <pod_name>
+## if see this error:
+controlplane ~ ➜  kubectl edit pod ubuntu-sleeper
+error: pods "ubuntu-sleeper" is invalid
+A copy of your changes has been stored to "/tmp/kubectl-edit-54311431.yaml"
+error: Edit cancelled, no valid changes were saved.
+## run:
+kubectl replace --force -f /tmp/kubectl-edit-54311431.yaml
 ```
 
 ### YAML

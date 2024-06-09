@@ -455,3 +455,80 @@ spec:
   ```
 
 - Previously created secrets will not be encrypted. To ensure that all secrets are encrypted, run `kubectl get secrets --all-namespaces -o json | kubectl replace -f -`
+
+## Docker Security
+
+- [Docker Security CheatSheet](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html)
+- Docker containers share the same underlying operating system as the Host but they have their own namespaces.
+- Thus, these containers can only see its own processes, libraries and dependencies. It cannot view anything outside of its own namespace.
+- Docker host has a set of users
+  - root
+  - non-root users
+- By default, Docker host runs containers as the root user.
+- If we don't want to run Docker containers as the root user, specify the user ID
+
+  - `docker run --user=1000 ubuntu sleep 3600`
+  - OR we can set the user ID in the docker image in Dockerfile
+
+    ```dockerfile
+    FROM ubuntu
+
+    USER 1000
+    ```
+
+    `docker build -t my-ubuntu-image .`
+    `docker run my-ubuntu-image sleep 3600`
+
+- What happens if you run container as the root user? Is the root user within the container the same as the root user on the Host?
+  - Can the process inside the container do anything that the root user can do on the system?
+  - Docker implements a set of security feature that limit the rights of the root user within the container.
+  - The root user within the Docker container is not like the root user on the Host.
+  - Docker uses Linux capabilities to implement this.
+- Adding capabilities to Docker container
+  - Grant additional capabilities to the container beyond the default set provided by Docker
+  - `docker run --cap-add NET_ADMIN -d --name my-container my-image`
+
+## Kubernetes SecurityContext
+
+- Can configure security at Pod level or Container level.
+- If configured at Pod level, the security settings will flow to all the containers in the Pod.
+- If configured at container level, the security settings on the container will override the settings on the Pod.
+
+```yaml
+## Adding Security Context to Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pod
+spec:
+  securityContext:
+    runAsUser: 1000 ## user id to limit permissions in Pod
+containers:
+  - name: ubuntu
+    image: ubuntu
+    command: ['sleep', '3600']
+```
+
+```yaml
+## Adding Security Context to Container
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pod
+spec:
+  containers:
+    - name: ubuntu
+      image: ubuntu
+      command: ['sleep', '3600']
+      securityContext:
+        runAsUser: 1000
+        capabilities:
+          add: ['MAC_ADMIN'] ## capabilities are only supported at the container level and not at the POD level
+```
+
+- Check the user that is running the container
+
+```sh
+controlplane ~ ➜  kubectl exec ubuntu-sleeper -- whoami
+root
+```
