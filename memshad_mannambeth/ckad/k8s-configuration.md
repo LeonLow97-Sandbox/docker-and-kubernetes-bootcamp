@@ -532,3 +532,109 @@ spec:
 controlplane ~ ➜  kubectl exec ubuntu-sleeper -- whoami
 root
 ```
+
+## Kubernetes ServiceAccounts
+
+- 2 Types of accounts in Kubernetes: User and Service
+  - User account is used by humans, e.g., administrator, developer accessing the k8s cluster
+  - Service account is used by machines, e.g., application interacting with k8s cluster like a monitoring application Prometheus to poll k8s api to get performance metrics
+    - Query the kubernetes api to get information about the cluster
+
+```sh
+kubectl create serviceaccount dashboard-sa
+
+kubectl get serviceaccount
+kubectl get sa
+
+## creates a ServiceAccount object then generates a token for the ServiceAccount
+## then it creates a Secret object and stores the token in the Secret object
+kubectl describe serviceaccount dashboard-sa
+
+## to view the secret token
+## this token is used as an authentication bearer token while making a REST call to the k8s api
+kubectl describe secret dashboard-sa-token-kbbdm
+
+## making REST call to k8s api
+curl https://192.168.56.70:6443/api -insecure --header "Authorization: Bearer <secret_token>"
+```
+
+- What if third-party application (Prometheus) is hosted within the k8s cluster itself?
+
+  - Mount the service token secret as a volume inside the Pod hosting the third-party application
+  - Thus, the token secret is already mounted in the Pod and can be easily read by the application
+
+- Every k8s cluster has a `default` ServiceAccount.
+  - When a Pod is created, by default, the `default` ServiceAccount and its token are automatically mounted to the Pod as a volume mount.
+
+```sh
+## viewing default token secret
+kubectl describe pod <pod_name>
+
+Mounts:
+  /var/run/secrets/kubernetes.io/serviceaccount from default-token-j4hkv (ro)
+Conditions:
+  Type: Status
+Volumes:
+  default-token-j4hkv:
+    Type: Secret (a volume populated by a Secret)
+    SecretName: default-token-j4hkv
+    Optional: false
+```
+
+```sh
+## view the secret token mounts
+--> kubectl exec -it my-kubernetes-dashboard -- ls /var/run/secrets/kubernetes.io/serviceaccount
+ca.crt namespace token
+
+## view toke to access kubernetes api
+--> kubectl exec -it my-kubernetes-dashboard -- ls /var/run/secrets/kubernetes.io/serviceaccount/token
+```
+
+- Use a different ServiceAccount in the Pod definition file
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-kubernetes-dashboard
+spec:
+  containers:
+    - name: my-kubernetes-dashboard
+      image: my-kubernetes-dashboard
+  serviceAccountName: dashboard-sa
+```
+
+- **NOTE**: Cannot edit the ServiceAccount of an existing Pod. Must delete and recreate the Pod.
+
+- Prevent mounting the default ServiceAccount onto the Pod if none is specified.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-kubernetes-dashboard
+spec:
+  containers:
+    - name: my-kubernetes-dashboard
+      image: my-kubernetes-dashboard
+  automountServiceAccountToken: false # no ServiceAccount was specified, and also prevent mounting the `default` ServiceAccount
+```
+
+- The token is a JWT Token and it has no expiry.
+
+  - Decode JWT Token: `jq -R 'split(".") | select(length > 0) | .[0],.[1] | @base64d | fromjson' <<< "$JWT"`
+
+- Creating a non-expiring token ServiceAccount
+
+```yaml
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+  name: mysecretname
+  annotations:
+    kubernetes.io/service-account.name: dashboard-sa
+```
+
+- Create token for service account
+  - `kubectl create token <service_account_name>`
