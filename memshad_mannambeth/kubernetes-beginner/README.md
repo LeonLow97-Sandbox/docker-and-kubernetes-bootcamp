@@ -7,7 +7,7 @@
 
 ### Pods
 
-```
+```sh
 # Get help
 kubectl run --help
 
@@ -25,6 +25,9 @@ kubectl describe pod nginx
 
 # Delete pod
 kubectl delete pod nginx
+
+## Edit pod (imperative)
+kubectl edit pod <pod_name>
 ```
 
 ### YAML

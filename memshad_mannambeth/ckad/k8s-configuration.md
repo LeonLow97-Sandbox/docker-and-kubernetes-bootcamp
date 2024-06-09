@@ -199,9 +199,9 @@ env:
 
 ```yaml
 volumes:
-- name: app-config-volume
-  configMap:
-    name: app_config
+  - name: app-config-volume
+    configMap:
+      name: app_config
 ```
 
 - Other Commands
@@ -213,5 +213,110 @@ kubectl get configmaps
 ## Describe ConfigMap
 kubectl describe configmaps
 ```
+
+---
+
+## Kubernetes Secrets
+
+- Create the secret then inject it into the Pod.
+
+---
+
+### Create Secret
+
+- Imperative Method
+
+```sh
+kubectl create secret generic
+  <secret_name> --from-literal=<key>=<value>
+
+kubectl create secret generic \
+  app-secret --from-literal=DB_HOST=mysql \
+             --from-literal=DB_USER=root \
+             --from-literal=DB_PASSWORD=password
+
+## reading secrets from file
+kubectl create secret generic
+  <secret_name> --from-file=<path_to_file>
+
+kubectl create secret generic \
+  app-secret --from-file=app_secret.properties
+```
+
+- Declarative Approach
+  - `kubectl create -f secret-data.yaml`
+- Encode Secrets because we don't want to show them in plain text in YAML file
+  ```
+  echo -n 'mysql' | base64
+  bXlzcWw=
+  echo -n 'root' | base64
+  cm9vdA==
+  echo -n 'password' | base64
+  cGFzc3dvcmQ=
+  ```
+- Decode Secrets
+  ```
+  echo -n 'bXlzcWw=' | base64 --decode
+  mysql
+  ```
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+data:
+  DB_Host: bXlzcWw=
+  DB_User: cm9vdA==
+  DB_Password: cGFzc3dvcmQ=
+```
+
+```sh
+kubectl get secrets
+kubectl describe secrets
+
+kubectl get secret app-secret -o yaml
+```
+
+### Injecting K8s secrets into Pods
+
+```yaml
+# env
+envFrom:
+  - secretRef
+      name: app-config
+
+# Single env
+env:
+  - name: DB_Password
+    valueFrom:
+      secretKeyRef:
+        name: app-secret
+        key: DB_Password
+
+# Volume
+volumes:
+- name: app-secret-volume
+  secret:
+    secretName: app-secret
+```
+
+### Note on Secrets
+
+- Secrets are not Encrypted. Only encoded.
+  - Do not check-in Secret objects to SCM along with code.
+- Secrets are not encrypted in ETCD.
+  - Enable encryption at rest
+  - `EncryptionConfiguration` k8s object to encrypt secrets.
+- Anyone able to create pods/deployments in the same namespace can access the secrets.
+  - Configure least-privilege access to Secrets - RBAC (role-based access control)
+- Consider third-party secrets store providers
+  - AWS Provider, Azure Provider, GCP Provider, Vault Provider
+
+### How Kubernetes Handles Secrets
+
+- A secret is only sent to a node if a pod on that node requires it.
+- Kubelet stores the secret into a tmpfs so that the secret is not written to disk storage
+- Once the Pod the depends on the secret is deleted, kubelet will delete its local copy of the secret data as well.
 
 ---
