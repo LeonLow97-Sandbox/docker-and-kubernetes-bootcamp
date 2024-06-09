@@ -320,3 +320,138 @@ volumes:
 - Once the Pod the depends on the secret is deleted, kubelet will delete its local copy of the secret data as well.
 
 ---
+
+## Encrypting Secret Data at Rest
+
+- [Encrypting Secret Data at Rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
+
+1. Create a Secret Object
+
+```sh
+kubectl create secret generic my-secret --from-literal=key1=supersecret
+
+kubectl get secret my-secret -o yaml
+kubectl describe secret my-secret
+
+echo "<secret>" | base64 --decode
+```
+
+2. Install etcdctl
+
+- `apt-get install etcd-client`
+
+3. Check if `etcd-controlplane` is in system pods namespace
+
+- **System Components**: The output will include various Kubernetes system components such as etcd, kube-apiserver, kube-scheduler, kube-controller-manager, coredns, and others.
+- `kubectl get pods -n kube-system`
+
+4. Reading the secret out of etcd
+
+```sh
+ETCDCTL_API=3 etcdctl \
+   --cacert=/etc/kubernetes/pki/etcd/ca.crt   \
+   --cert=/etc/kubernetes/pki/etcd/server.crt \
+   --key=/etc/kubernetes/pki/etcd/server.key  \
+   get /registry/secrets/default/my-secret | hexdump -C   ## secret name here
+```
+
+- Data is stored in etcd in an unencrypted format currently. Thus, we need encryption in etcd.
+
+5. Check if `kube-api` server has the `--encryption-provider-config`
+
+```sh
+# 2 ways to check
+    # 1.
+ps -aux | grep kube-api | grep "encryption-provider-config"
+
+    # 2.
+ls /etc/kubernetes/manifests/
+cat /etc/kubernetes/manifests/kube-apiserver.yaml
+```
+
+6. If no `--encryption-provider-config` option, encryption at rest has not been enabled
+
+- Encryption happens at `identity` in the YAML file. If none provided, then no encryption.
+- We need a secret key to encrypt the k8s secret
+  - `head -c 32 /dev/urandom | base64`: generates a 32-byte random key and base64 encode it. (MacOS and Linux)
+    ```
+    ~ head -c 32 /dev/urandom | base64
+    mEg+nxrHi/bO4Be6zfNT3HBccNRyndPQinnraJVozVY=
+    ```
+- The YAML file created below will be named as `enc.yaml`
+
+```yaml
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+      - secrets ## specifying that we want to encrypt k8s secrets
+    providers:
+      - aesbc:
+          keys:
+            - name: key1
+              secret: mEg+nxrHi/bO4Be6zfNT3HBccNRyndPQinnraJVozVY=
+      - identity: {}
+```
+
+7. Mount the new encryption config file to the `kube-apiserver` static pod
+
+- Save the new encryption config file to `/etc/kubernetes/enc/enc.yaml` on the control-plane node.
+  - `mkdir /etc/kubernetes/enc`
+  - `mv enc.yaml`
+
+8. Edit the manifest for the kube-apiserver static pod: `/etc/kubernetes/manifests/kube-apiserver.yaml` so that it is similar to:
+
+- `vi /etc/kubernetes/manifests/kube-apiserver.yaml`
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kubeadm.kubernetes.io/kube-apiserver.advertise-address.endpoint: 10.20.30.40:443
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: kube-apiserver
+    tier: control-plane
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+    - kube-apiserver
+    ...
+    - --encryption-provider-config=/etc/kubernetes/enc/enc.yaml  # add this line
+    # directory in the Pod
+    volumeMounts:
+    ...
+    - name: enc                           # add this line
+      mountPath: /etc/kubernetes/enc      # add this line
+      readOnly: true                      # add this line
+    ...
+  # location of file in local directory
+  volumes:
+  ...
+  - name: enc                             # add this line
+    hostPath:                             # add this line
+      path: /etc/kubernetes/enc           # add this line
+      type: DirectoryOrCreate             # add this line
+  ...
+```
+
+9. Restart the api server
+
+- Run `crictl pods` to check the state of `kube-apiserver-controlplane`
+- Run `ps -aux | grep kube-api | grep "encryption-provider-config"` to check if the encryption option was added
+- Test creating a new secret `kubectl create secret generic my-secret-2 --from-literal=key2=topsecret`
+- Run and should see encrypted secret (not plaintext)
+
+  ```
+  ETCDCTL_API=3 etcdctl \
+   --cacert=/etc/kubernetes/pki/etcd/ca.crt   \
+   --cert=/etc/kubernetes/pki/etcd/server.crt \
+   --key=/etc/kubernetes/pki/etcd/server.key  \
+   get /registry/secrets/default/my-secret-2 | hexdump -C
+  ```
+
+- Previously created secrets will not be encrypted. To ensure that all secrets are encrypted, run `kubectl get secrets --all-namespaces -o json | kubectl replace -f -`
