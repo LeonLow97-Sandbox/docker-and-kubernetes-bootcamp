@@ -638,3 +638,164 @@ metadata:
 
 - Create token for service account
   - `kubectl create token <service_account_name>`
+
+## Kubernetes Resource Requirements
+
+- In a k8s cluster, each node has limited CPU and memory available.
+- Every Pod requires a set of resources to run, consuming resources on the Node.
+- kube-scheduler decides which Pod the Node goes to, scheduler takes into account resources required on the Pod and the availability of resources on each Node, then identifies the best Node for allocating the Pod.
+- If there are no available Nodes to place a Pod, the Pod will be in `Pending` status.
+  - The error message will be: `FailedScheduling No nodes are available that match all of the following predicates:: Insufficient cpu (3).`
+
+---
+
+### Resource Requests
+
+- Resources
+  - CPU: 1
+  - Memory: 1Gi (1 GB)
+
+```yaml
+## Pod Definition YAML
+apiVersion: v1
+kind: Pod
+---
+spec:
+  containers:
+    - name: simple-app
+      image: simple-app
+      ports:
+        - containerPort: 8080
+      resources:
+        ## Pod resources. kube-scheduler will look for an available Node that has available resources for these requests.
+        requests:
+          memory: '4Gi'
+          cpu: 2
+```
+
+### Resource - CPU
+
+- CPU Values
+  - 1 CPU, 100m CPU, 1m CPU (m stands for milli)
+- 1 CPU is equivalent to:
+  - 1 AWS vCPU
+  - 1 GCP Core
+  - 1 Azure Core
+  - 1 Hyperthread
+
+### Resource - Memory
+
+- Memory Values
+  - 256 Mi
+  - 268 M
+  - 1 G
+
+|     Memory     |   Number of Bytes   |
+| :------------: | :-----------------: |
+| 1G (Gigabyte)  | 1,000,000,000 bytes |
+| 1M (Megabyte)  |   1,000,000 bytes   |
+| 1K (Kilobyte)  |     1,000 bytes     |
+| 1Gi (Gibibyte) | 1,073,741,824 bytes |
+| 1Mi (Mebibyte) |   1,048,576 bytes   |
+| 1Ki (Kikibyte) |     1,024 bytes     |
+
+### Resource Limits
+
+- Limit the container from taking up all the CPU or memory from the Node
+  - E.g., 1 vCPU or 512 Mi
+
+```yaml
+## Pod Definition YAML
+apiVersion: v1
+kind: Pod
+---
+spec:
+  containers:
+    - name: simple-app
+      image: simple-app
+      ports:
+        - containerPort: 8080
+      resources:
+        ## Pod resources. kube-scheduler will look for an available Node that has available resources for these requests.
+        requests:
+          memory: '4Gi'
+          cpu: 2
+        limits:
+          memory: '2Gi'
+          cpu: 2
+```
+
+### Exceed Limits
+
+- When a Pod tries to exceed its limits, the system throttles the CPU so that it does not go beyond its limits.
+- However, a Pod can exceed its memory limits. But if it exceeds constantly, the Pod will be terminated and will be **OOM (Out of Memory)**.
+
+### Behavior - CPU and Memory
+
+- ![CPU Behavior](./course_resources/diagrams/cpu-behavior.png)
+- ![Memory Behavior](./course_resources/diagrams/memory-behavior.png)
+
+---
+
+## Kubernetes Limit Ranges
+
+- LimitRange ensures that every Pod created has default values set to CPU and Memory.
+- This can happen without CPU and memory values specified in Pod definition files.
+- These are enforced when the Pod is created. **It does not affect existing Pods, it only affects newly created Pods**.
+
+```yaml
+## LimitRange for CPU
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cpu-resource-constraint
+spec:
+  limits:
+    - default:
+        cpu: 500m
+      defaultRequest:
+        cpu: 500m
+      max:
+        cpu: '1'
+      min:
+        cpu: 100m
+      type: Container
+```
+
+```yaml
+## LimitRange for Memory
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: memory-resource-constraint
+spec:
+  limits:
+    - default:
+        cpu: 1Gi
+      defaultRequest:
+        cpu: 1Gi
+      max:
+        cpu: 1Gi
+      min:
+        cpu: 500Mi
+      type: Container
+```
+
+## Kubernetes Resource Quota
+
+- ResourceQuota is a namespace level object, it allows you to specify constraints on resource consumption within a particular namespace.
+- ResourceQuota not only applies to Pods, but also to other resources within the namespace, such as PVCs, Services, ConfigMaps, and Secrets.
+
+```yaml
+## resource-quota.yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: my-resource-quota
+spec:
+  hard:
+    requests.cpu: 4
+    requests.memory: 4Gi
+    limits.cpu: 10
+    limits.memory: 10Gi
+```
