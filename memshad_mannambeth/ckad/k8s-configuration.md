@@ -742,6 +742,9 @@ spec:
 - LimitRange ensures that every Pod created has default values set to CPU and Memory.
 - This can happen without CPU and memory values specified in Pod definition files.
 - These are enforced when the Pod is created. **It does not affect existing Pods, it only affects newly created Pods**.
+- **Pod Specification Overrides**: If the Pod specification file explicitly specifies memory and CPU limits, those values will override any default values defined in the LimitRange.
+- Kubernetes validates the Pod against the LimitRange rules. If the specified limits in the Pod definition file fall within the allowed range defined in the LimitRange, the Pod is created successfully.
+- If the specified limits in the Pod definition file fall outside the allowed range defined in the LimitRange, Kubernetes will reject the creation of the Pod, and an error will be returned.
 
 ```yaml
 ## LimitRange for CPU
@@ -799,3 +802,64 @@ spec:
     limits.cpu: 10
     limits.memory: 10Gi
 ```
+
+## Kubernetes Taints and Tolerations
+
+- Restrict Nodes from accepting certain Pods.
+- Taints:
+  - Applied to Nodes
+  - Indicate node limitations or issues (e.g., hardware problems, outdated software)
+  - Prevent Pods from being scheduled on a Node unless they tolerate the Taint
+  - 3 Taint Effects:
+    1. `NoSchedule`: Pods will not be scheduled onto the Node
+    2. `PreferNoSchedule`: system tries to avoid placing the Pod onto the Node.
+    3. `NoExecute`: new Pods will not be scheduled onto the Node and existing Pods onto the Node, will be evicted if they do not tolerate the taint.
+- Tolerations:
+  - Applied to Pods
+  - Allow Pods to be scheduled on Nodes with matching Taints
+  - Specify the tolerable Taint values (key, value, effect)
+- Taints and Tolerations help the Kubernetes scheduler make informed decisions
+- Ensure Pods are deployed on suitable Nodes, respecting node limitations
+- Enhance cluster management and resource utilization.
+- However, it does not mean that the tainted Pod will enter the Node with the same tolerance. The tainted Pod can also be scheduled into other Nodes with no tolerance.
+  - It does not tell the Pod to go to a certain Node. Instead, it only tells the Node to accept certain Pods.
+
+```sh
+## taint node
+kubectl taint nodes node-name key=value:taint-effect  ## key-value pair
+
+kubectl taint nodes node1 app=blue:NoSchedule  ## example command
+
+## check taints on node
+kubectl describe node node-name | grep Taint
+
+##### remove taint from node
+## Step 1: Get the Taint from the node
+kubectl describe node node-name | grep Taint
+## Step 2: Add a minus at the end
+kubectl taint node node-name Taint-   ## add a '-' at the end
+
+## check what nodes are Pods scheduled to
+kubectl get pods -o wide
+```
+
+```yaml
+## adding Tolerations to Pods
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx
+  ## NOTE: Values MUST be in DOUBLE QUOTES
+  tolerations:
+    - key: 'app'
+      operator: 'Equal'
+      value: 'blue'
+      effect: 'NoSchedule'  ## Pod is allowed to be scheduled on a Node that has a Taint with NoSchedule
+```
+
+- When Kubernetes Cluster first sets up, a taint is already applied on the Master Node automatically that prevents any Pods from being scheduled on the Master Node.
+  - To see this taint, `kubectl describe node kubemaster | grep Taint`, you will see `Taints: node-role.kubernetes.io/master:NoSchedule`

@@ -19,6 +19,11 @@ kubectl get pods
 
 # Displays detailed information about the pods, including the pod's IP address, associated ports, and the nodes where they are running on
 kubectl get pods -o wide
+## Example
+controlplane ~ ✖ kubectl get pods -o wide
+NAME       READY   STATUS    RESTARTS   AGE     IP           NODE     NOMINATED NODE   READINESS GATES
+bee        1/1     Running   0          5m22s   10.244.1.2   node01   <none>           <none>
+mosquito   0/1     Pending   0          8m13s   <none>       <none>   <none>           <none>
 
 # Detailed description of the specific pod named "nginx", offering insights into its configuration, events, and current status within the Kubernetes cluster
 kubectl describe pod nginx
