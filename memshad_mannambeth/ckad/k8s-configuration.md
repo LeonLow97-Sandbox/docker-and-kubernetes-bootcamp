@@ -970,3 +970,11 @@ spec:
 - `RequiredDuringExecution`: any existing Pods that are running on Nodes and do not meet the change in Node Affinity Rules will be evicted.
 
 ---
+
+## Taints and Tolerations vs Node Affinity
+
+- By setting taints on Nodes and tolerations on Pods, it does not guarantee that the Pod will be scheduled on the Node with acceptable taint. The Pod can be scheduled to another Node with no taint at all.
+- By setting Node Selector and Affinity and Nodes and Pods, the Pods will now be placed onto the respective Nodes. However, other Pods that do not have any selectors (affinity rules) can be placed onto Nodes with labels.
+- To solve this, use a combination of taints and tolerations, as well as node affinity. This allow us to:
+  - Restrict Pod placement on specific Nodes using Taints and Tolerations
+  - Specify preferred Nodes for scheduling using Node Affinity.
