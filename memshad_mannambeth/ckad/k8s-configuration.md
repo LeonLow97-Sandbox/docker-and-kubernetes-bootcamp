@@ -858,8 +858,115 @@ spec:
     - key: 'app'
       operator: 'Equal'
       value: 'blue'
-      effect: 'NoSchedule'  ## Pod is allowed to be scheduled on a Node that has a Taint with NoSchedule
+      effect: 'NoSchedule' ## Pod is allowed to be scheduled on a Node that has a Taint with NoSchedule
 ```
 
 - When Kubernetes Cluster first sets up, a taint is already applied on the Master Node automatically that prevents any Pods from being scheduled on the Master Node.
   - To see this taint, `kubectl describe node kubemaster | grep Taint`, you will see `Taints: node-role.kubernetes.io/master:NoSchedule`
+
+## Kubernetes Node Selectors
+
+- Set limitation on Pods so they only run on particular Nodes
+- Set Node Selectors
+- Kubernetes-scheduler uses the `nodeSelector` on pod and nodes to find out which pod to place into which node
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+    - name: data-processor
+      image: data-processor
+  nodeSelector:
+    size: Large
+```
+
+```sh
+# labelling Nodes
+kubectl label nodes <node-name> <label-key>=<label-value>
+
+kubectl label nodes node01 size=Large
+
+## find labels on existing nodes (go to `Labels` section)
+kubectl describe node node-name
+```
+
+- What if we want to add conditions?
+  - E.g., Place the Pod into Nodes that are "Large OR Medium"
+  - E.g., Place the Pod into Nodes that are "NOT small"
+  - Need to use Node Affinity or Anti Affinity
+
+## Kubernetes Node Affinity
+
+```yaml
+## Place Pods into Nodes that are Large or Medium
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+    - name: data-processor
+      image: data-processor
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: In
+            values:
+            - Large
+            - Medium
+
+## NOT small
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: NotIn
+            values:
+            - Small
+
+## Operator "Exists" means that the Pod will be schedule on a Node that has a label named "size", regardless of its value
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: Exists
+```
+
+- What if there are no Nodes that have the label "size"? What if someone changes the label on the Node? Will the Pod continue to stay on the Node?
+  - Focus on Node Affinity Types
+  - `DuringScheduling`: Pod does not exist and is created for the first time.
+  - `DuringExecution`: Pod already exists and is running, then a change is made that affects Node Affinity.
+
+---
+
+### Node Affinity Types
+
+- Available:
+
+1. `requiredDuringSchedulingIgnoredDuringExecution`:
+
+- `requiredDuringScheduling`: if a matching Node does not exist, the Pod will not be scheduled.
+- `IgnoredDuringExecution`: pods continue to run after they have been scheduled even though Node Affinity has changed.
+
+2. `preferredDuringSchedulingIgnoredDuringExecution`:
+
+- `preferredDuringScheduling`: if a matching Node does not exist, the kube-scheduler will ignore Node affinity rules and place the Pod on any available Nodes.
+- `IgnoredDuringExecution`: pods continue to run after they have been scheduled even though Node Affinity has changed.
+
+- Planned (Future k8s Update)
+
+1. `requiredDuringSchedulingRequiredDuringExecution`:
+
+- `RequiredDuringExecution`: any existing Pods that are running on Nodes and do not meet the change in Node Affinity Rules will be evicted.
+
+---
