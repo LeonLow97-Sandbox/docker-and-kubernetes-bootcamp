@@ -717,9 +717,11 @@ spec:
         - containerPort: 8080
       resources:
         ## Pod resources. kube-scheduler will look for an available Node that has available resources for these requests.
+        ## The container requests 1Gi of memory and 1 CPUs but is limited to 2Gi of memory and 2 CPUs.
+        ## This setup ensures that while the container is allocated resources, it cannot exceed the specified limits.
         requests:
-          memory: '4Gi'
-          cpu: 2
+          memory: '1Gi'
+          cpu: 1
         limits:
           memory: '2Gi'
           cpu: 2
@@ -774,13 +776,13 @@ metadata:
 spec:
   limits:
     - default:
-        cpu: 1Gi
+        memory: 1Gi
       defaultRequest:
-        cpu: 1Gi
+        memory: 1Gi
       max:
-        cpu: 1Gi
+        memory: 1Gi
       min:
-        cpu: 500Mi
+        memory: 500Mi
       type: Container
 ```
 
@@ -974,7 +976,7 @@ spec:
 ## Taints and Tolerations vs Node Affinity
 
 - By setting taints on Nodes and tolerations on Pods, it does not guarantee that the Pod will be scheduled on the Node with acceptable taint. The Pod can be scheduled to another Node with no taint at all.
-- By setting Node Selector and Affinity and Nodes and Pods, the Pods will now be placed onto the respective Nodes. However, other Pods that do not have any selectors (affinity rules) can be placed onto Nodes with labels.
+- By setting Node Selector and Affinity on Nodes and Pods, the Pods will now be placed onto the respective Nodes. However, other Pods that do not have any selectors (affinity rules) can be placed onto Nodes with labels.
 - To solve this, use a combination of taints and tolerations, as well as node affinity. This allow us to:
   - Restrict Pod placement on specific Nodes using Taints and Tolerations
   - Specify preferred Nodes for scheduling using Node Affinity.
