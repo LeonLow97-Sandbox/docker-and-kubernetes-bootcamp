@@ -82,8 +82,8 @@ readinessProbe:
 
 ## Liveness Probes
 
-- Liveness probes: These probes help you evaluate whether an application that is running in a container is in a healthy state. 
-If not, Kubernetes kills the container and attempts to redeploy it.
+- Liveness probes: These probes help you evaluate whether an application that is running in a container is in a healthy state.
+  If not, Kubernetes kills the container and attempts to redeploy it.
 - For API, Setup HTTP Test like `/api/healthy`
 - For database, set up TCP Test - 3306 (MySQL)
 
@@ -109,3 +109,23 @@ livenessProbe:
       - cat
       - /app/is_ready
 ```
+
+## Kubernetes Container Logging
+
+- `kubectl logs -f <pod_name>`: use `-f` to stream logs live, this command works for pods with **one container**.
+- `kubectl logs -f <pod_name> <container_name>`: for Pods with **multiple containers**.
+
+## Kubernetes Monitor and Debug Applications
+
+- E.g., Monitor resource consumption on Kubernetes, number of healthy nodes, performance metrics of each Pod, ...
+- Open source monitoring solutions like Prometheus, Elastic Stack, Data Dog, Dynatrace
+- Metrics Server for CKAD
+  - Retrieves metrics from each node and pod, aggregates them and stores them **in-memory** and does not store them on disk.
+  - Cannot see historical data.
+  - kubelet receives instructions from kube api server and running pods and nodes. kubelet contains a sub-component called cAdvisor.
+  - cAdvisor retrieves performance metrics from Pods and exposing them on kubelet api and exposing them through kubelet api for metrics server
+  - `minikube addons enable metrics-server`
+  - `git clone https://github.com/kubernetes-incubator/metrics-server.git`: retrieve deployment files for metrics server
+  - `kubectl create -f deploy/1.8+/`
+  - `kubectl top node`: provides cpu and memory consumption of each node
+  - `kubectl top pod`
