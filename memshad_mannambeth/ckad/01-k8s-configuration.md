@@ -542,6 +542,7 @@ root
 
 ```sh
 kubectl create serviceaccount dashboard-sa
+kubectl create serviceaccount <service_account_name> --namespace <namespace>
 
 kubectl get serviceaccount
 kubectl get sa
