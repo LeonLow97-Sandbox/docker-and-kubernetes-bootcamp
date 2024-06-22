@@ -214,6 +214,20 @@ metadata:
   name: nginx-ingress-serviceaccount
 ```
 
+```sh
+## get the name of the ingress-controller
+kubectl get deploy -n ingress-space
+
+## expose the ingress controller as NodePort
+kubectl expose deploy ingress-controller -n ingress-space --name ingress -h
+kubectl expose deploy ingress-controller -n ingress-space --name ingress --port=80 --target-port=80 --type NodePort
+
+## view the service NodePort
+kubectl get svc -n ingress-space
+
+kubectl edit svc ingress -n ingress-space
+```
+
 - Ingress Controller
 
   - **Deployment** manages the deployment and scaling of the nginx-ingress-controller Pod. It ensures that there is always one instance (`replicas: 1`) of the nginx-ingress-controller Pod running, which runs the NGINX Ingress Controller to manage incoming traffic based on configured rules and settings
@@ -310,16 +324,15 @@ kubectl get ingress -A
 kubectl describe ingress <ingress_name>
 
 ## Imperative approach to create Ingress Resource
+kubectl create ingress --help
+kubectl create ingress <ingress_name> -n <namespace> --rule="/wear=pay-service:8080" --rule="/watch=watch-service:8080"
+
 kubectl create ingress <ingress_name> --rule="host/path=service:port"
 kubectl create ingress <ingress_test> --rule="wear.my-online-store.com/wear*=wear-service:80"
 
 ## find all ingress resources in all namespaces
 kubectl get ingress --all-namespaces
 kubectl get ingress -A
-
-## using kubectl --help
-kubectl create ingress --help
-kubectl create ingress <ingress_name> -n <namespace> --rule="/pay=pay-service:8282"
 
 kubectl get roles -n <ingress_namespace>
 kubectl get rolebindings -n <ingress_namespace>
@@ -390,12 +403,12 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-  - http:
-      paths:
-      - path: /pay
-        backend:
-          serviceName: pay-service
-          servicePort: 8282
+    - http:
+        paths:
+          - path: /pay
+            backend:
+              serviceName: pay-service
+              servicePort: 8282
 ```
 
 This could also be: `replace("/something(/|$)(.*)", "/$2")`
@@ -410,11 +423,97 @@ metadata:
   namespace: default
 spec:
   rules:
-  - host: rewrite.bar.com
-    http:
-      paths:
-      - backend:
-          serviceName: http-svc
-          servicePort: 80
-        path: /something(/|$)(.*)
+    - host: rewrite.bar.com
+      http:
+        paths:
+          - backend:
+              serviceName: http-svc
+              servicePort: 80
+            path: /something(/|$)(.*)
+```
+
+## Kubernetes Network Policies
+
+![Ingress and Egress Traffic](./course_resources/diagrams/ingress-egress.png)
+
+- Traffic
+
+  - Ingress and Egress Traffic
+
+- Network Security
+  - Pods should be able to communicate with each other across Nodes using IPs.
+  - Kubernetes is by default configured with "All Allow" policy.
+  - However, we want to prevent the web-pod from communicating with the db-pod. Only the API-pod can communicate with the db-pod.
+  - Thus, we need to implement **NetworkPolicy** which is another object in the Kubernetes Namespace.
+  - We should define NetworkPolicy on the db-pod to only allow ingress traffic from API-pod on Port 3306.
+    Once this policy is created, it blocks all other traffic to the pod, and only allows traffic that matches the specified rule.
+  - Use labels and selectors
+
+```yaml
+## pod labels for db-pod
+labels:
+  role: db
+```
+
+```yaml
+## network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-policy
+spec:
+  ## network policy selector
+  podSelector:
+    matchLabels:
+      role: db ## label on db-pod
+  policyTypes:
+    ## ingress or egress traffic
+    - Ingress ## ingress because we receive incoming traffic from api-pod
+    ## since egress traffic is not defined, the db-pod cannot make a request to api-pod
+    ## because egress is not defined in the policyTypes in network policy
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              name: api-pod
+          namespaceSelector:
+            matchLabels:
+              name: prod ## only allow api-pod in prod namespace to reach db-pod because you can have other api-pod with same labels but in different namespaces
+        # - namespaceSelector:
+        #     matchLabels:
+        #       name: prod
+        - ipBlock:
+            cidr: 192.168.5.10/32 ## allowing this ip address to hit the db-pod
+      ports:
+        - protocol: TCP
+          port: 3306 ## port to allow traffic to go through
+
+## db-pod pushes traffic to an external backup server, need egress rule defined
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              name: api-pod
+      ports:
+        - protocol: TCP
+          port: 3306
+  egress:
+    - to:
+      - ipBlock:
+        cidr: 192.168.5.10/32
+      ports:
+        - protocol: TCP
+          port: 80
+```
+
+```sh
+kubectl create -f network-policy-definition.yaml
+
+kubectl get networkpolicy
+kubectl get netpol
+
+kubectl describe networkpolicy <network_policy_name>
 ```
