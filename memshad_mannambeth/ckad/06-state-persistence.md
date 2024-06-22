@@ -211,3 +211,162 @@ spec:
 kubectl get storageclass
 kubectl get sc
 ```
+
+## Kubernetes StatefulSets
+
+- IP addresses of Pods are dynamically assigned. If Pod is recreated, the Pod name changes and Pod IP changes.
+- A StatefulSet in Kubernetes is a workload API object used to manage stateful applications, ensuring the stable, unique network identities and persistent storage for each of its pods.
+- Pods are created in an ordered, graceful deployment.
+- Unlike Deployments, StatefulSets maintain a **sticky identity for each pod**, allowing for ordered deployment, scaling, and updates.
+
+  - 3 Pods: `<stateful_set_name>-0`, `<stateful_set_name>-1`, `<stateful_set_name>-2`
+  - The first Pod created will always have the name `<stateful_set_name>-0`
+
+- Good for Master-Slave Replication
+  - E.g., 1 Master and 2 Slaves
+  - Slave reads data from Master_Host with consistent name `mysql-0`
+  - Procedure:
+    1. Setup master first and then slaves
+    2. Clone data from the master to slave-1
+    3. Enable continuous replication from master to slave-1
+    4. Wait for slave-1 to be ready
+    5. Clone data from slave-1 to slave-2
+    6. Enable continuous replication from master to slave-2
+    7. Configure Master Address on Slave (i.e., `mysql-0`)
+
+```yaml
+# statefulset-definition.yaml
+# same as Deployment, just need to change `kind` and specify `serviceName` (headless service)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mysql
+  serviceName: mysql-h ## headless service
+  podManagementPolicy: Parallel ## by default is OrderedReady. Parallel means creating Pods in parallel instead of orderly manner
+```
+
+```sh
+kubectl create -f statefulset-definition.yaml
+
+## scaling gracefully with stateful sets
+kubectl scale statefulset mysql --replicas=5
+kubectl scale statefulset mysql --replicas=3 ## scaling down
+
+kubectl delete statefulset mysql
+```
+
+## Headless Services
+
+- A Headless Service in Kubernetes is a type of Service that does not assign a cluster IP address.
+- Instead, it enables **direct DNS resolution to the individual pod IP addresses**, allowing clients to connect directly to the pods, **often used with StatefulSets** to provide stable network identities for stateful applications.
+- Each Pod gets `<pod_name.headless_service>`
+  - E.g., `mysql-0.mysql-h.default.svc.cluster.local`, `mysql-1.mysql-h.default.svc.cluster.local`, `mysql-2.mysql-h.default.svc.cluster.local`
+- Purpose of this is because we want write operations to only be directed to `mysql-0.mysql-h.default.svc.cluster.local` (which is the Master Node).
+
+```yaml
+## headless-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-h
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: mysql
+  clusterIP: None ## Setting clusterIP to None makes this a headless service, enabling direct DNS resolution to the pods
+
+---
+## deployment-definition.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql-deployment
+  labels:
+    app: mysql
+spec:
+  serviceName: mysql-h ## must specify the headless service
+  replicas: 3
+  matchLabels:
+    app: mysql
+  template:
+    metadata:
+      name: myapp-pod
+      labels: app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql
+      ## Usually this section is not specified. If specified, it needs a headless service with the same name
+      ## to create DNS records like `mysql-pod.mysql-h.default.svc.cluster.local`
+      subdomain: mysql-h ## Specify the headless service name to set up DNS subdomain for the pod
+      hostname: mysql-pod ## Configure the DNS entry name of the pod
+```
+
+## `VolumeClaimTemplate`
+
+- `volumeClaimTemplate`: Defines a PVC template within a StatefulSet. Ensures each pod gets its own PV for persistent storage, critical for stateful applications. In the example, each pod will have its own data-volume that is bound to a PV provisioned by the google-storage StorageClass.
+- Pods are created in an ordered manner.
+  - When the first Pod is created with a PVC, the StorageClass dynamically provisions a PV to bind to the PVC.
+  - When the next Pod is created with a PVC, the StorageClass dynamically provisions another PV to bind to this new PVC, ensuring each PVC gets a separate PV.
+- If a Pod is destroyed and recreated, the Pod is recreated with the same PVC as before. Thus, this ensures that data is persistent and stateful, maintaining data integrity.
+
+```yaml
+## deployment-definition.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql-deployment
+  labels:
+    app: mysql
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: data-volume
+  # ensure that each pod in the StatefulSet gets its own persistent storage, which is crucial for stateful applications.
+  volumeClaimTemplates:
+    - metadata:
+        name: data-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: google-storage
+        resources:
+          requests:
+            storage: 500Mi
+
+---
+# sc-definition.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: google-storage
+provisioner: kubernetes.io/gce-pd
+```
