@@ -56,7 +56,7 @@ metadata:
 - When you first create a Deployment, it triggers a rollout.
 - A new rollout creates a new Deployment revision. Let's call it "revision 1"
 - In future, when the application is upgraded and the container version is updated to a new one, a new rollout is triggered and a new Deployment revision is created called "revision 2".
-- This helps us to **track the changes made to the Deployment** and **enables to to rollback to a previous version of Deployment** (if necessary).
+- This helps us to **track the changes made to the Deployment** and **enables us to rollback to a previous version of Deployment** (if necessary).
 
 ---
 
@@ -99,7 +99,7 @@ metadata:
   - `port`: port on the service itself.
   - `NodePort`: port on the Node itself which we use to access the web server externally. NodePorts can only be in a valid range from 30000 to 32767. Users will connect to the POD via the Node's IP address and the NodePort. `http://<NodeIP>:<NodePort>`
 - The `selector` for NodePort must be the same as `label` for POD because there could be many POD with the same port and the service does not know which POD to forward requests to. Need a selector and label to identify the correct POD.
-- When we have multiple similar PODs running the application, the NodePort service also acts as a built-in load balancer to distribute load across different PODs and it identifies the correct port by selector and label. The NodePort Server spans scross all nodes in the cluster and maps the targetPort to the same NodePort on all the ndoes in the cluster.
+- When we have multiple similar PODs running the application, the NodePort service also acts as a built-in load balancer to distribute load across different PODs and it identifies the correct port by selector and label. The NodePort Server spans scross all nodes in the cluster and maps the targetPort to the same NodePort on all the nodes in the cluster.
 - The primary purpose of a Service object in Kubernetes, including a NodePort, is to provide a stable IP address and DNS name for accessing a set of Pods, regardless of where they are running within the cluster. - This abstraction decouples the client from the actual Pod IPs.
 
 ## ClusterIP (Kubernetes Service)

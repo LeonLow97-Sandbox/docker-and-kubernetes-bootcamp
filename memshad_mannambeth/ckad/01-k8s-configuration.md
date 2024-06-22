@@ -179,6 +179,7 @@ spec:
       image: my-app
       ports:
         - containerPort: 8080
+      # envFrom applies all key-value pairs from ConfigMap as environment variables
       envFrom:
         - configMapRef:
           name: app_config
@@ -187,6 +188,8 @@ spec:
 - Single Env
 
 ```yaml
+# env is used to specify individual environment variables, sourced from
+# specific keys in a ConfigMap
 env:
   - name: APP_ENV
     valueFrom:
@@ -479,14 +482,14 @@ spec:
     `docker build -t my-ubuntu-image .`
     `docker run my-ubuntu-image sleep 3600`
 
-- What happens if you run container as the root user? Is the root user within the container the same as the root user on the Host?
-  - Can the process inside the container do anything that the root user can do on the system?
-  - Docker implements a set of security feature that limit the rights of the root user within the container.
-  - The root user within the Docker container is not like the root user on the Host.
-  - Docker uses Linux capabilities to implement this.
-- Adding capabilities to Docker container
-  - Grant additional capabilities to the container beyond the default set provided by Docker
+- Security Implications of Running Docker Containers as Root: Is Container Root the same as Host Root?
+  - **Container Root User**: The root user inside a Docker container has elevated privileges within the container. However, by default, it does not have the same unrestricted access to the host system as the root user on the host. The root user on the host has full control over the entire host system, including all containers, processes and files.
+  - **Namespace isolation**: Docker containers run in their own isolated namespaces (e.g., PID, network, mount, user), which limits the scope of the root user within the container. The root user inside the container does not have direct access to the host's root user permissions.
+  - **Linux Capabilities**: Docker limits the root user's capabilities within the container. Linux capabilities are a set of privileges that can be independently enabled or disabled for a process. Docker drops many of the capabilities typically associated with the root user, reducing the potential damage if a container is compromised.
+- Adding Elevated Privileges to Docker container
+  - Grant additional capabilities to the container beyond the default set provided by Docker, this can be necessary for tasks like network administration
   - `docker run --cap-add NET_ADMIN -d --name my-container my-image`
+    - `--cap-add=NET_ADMIN`: allows the container to perform network-related operations that require administrative privileges, such as configuring interfaces, modifying routing tables, or changing firewall rules.
 
 ## Kubernetes SecurityContext
 
@@ -644,7 +647,7 @@ metadata:
 
 - In a k8s cluster, each node has limited CPU and memory available.
 - Every Pod requires a set of resources to run, consuming resources on the Node.
-- kube-scheduler decides which Pod the Node goes to, scheduler takes into account resources required on the Pod and the availability of resources on each Node, then identifies the best Node for allocating the Pod.
+- kube-scheduler decides which Node the Pod goes to, scheduler takes into account resources required on the Pod and the availability of resources on each Node, then identifies the best Node for allocating the Pod.
 - If there are no available Nodes to place a Pod, the Pod will be in `Pending` status.
   - The error message will be: `FailedScheduling No nodes are available that match all of the following predicates:: Insufficient cpu (3).`
 
@@ -816,7 +819,7 @@ spec:
   - 3 Taint Effects:
     1. `NoSchedule`: Pods will not be scheduled onto the Node
     2. `PreferNoSchedule`: system tries to avoid placing the Pod onto the Node.
-    3. `NoExecute`: new Pods will not be scheduled onto the Node and existing Pods onto the Node, will be evicted if they do not tolerate the taint.
+    3. `NoExecute`: new Pods will not be scheduled onto the Node, and existing Pods on the Node will be evicted unless they tolerate the taint.
 - Tolerations:
   - Applied to Pods
   - Allow Pods to be scheduled on Nodes with matching Taints
@@ -824,7 +827,7 @@ spec:
 - Taints and Tolerations help the Kubernetes scheduler make informed decisions
 - Ensure Pods are deployed on suitable Nodes, respecting node limitations
 - Enhance cluster management and resource utilization.
-- However, it does not mean that the tainted Pod will enter the Node with the same tolerance. The tainted Pod can also be scheduled into other Nodes with no tolerance.
+- However, it does not mean that a Pod with a matching tolerance will always be scheduled on a Node with that taint. The Pod can also be scheduled on other Nodes that do not have the taint.
   - It does not tell the Pod to go to a certain Node. Instead, it only tells the Node to accept certain Pods.
 
 ```sh

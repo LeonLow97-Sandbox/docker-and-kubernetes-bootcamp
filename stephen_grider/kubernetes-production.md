@@ -29,7 +29,8 @@ docker-compose -f docker-compose-dev.yml down
   - ClusterIP Services attached to Deployment can allow other Deployment object types in the Kubernetes Cluster to connect to.
   - If connected to Cluster IP service, we are exposing the Pods in Deployment to other services inside the Kubernetes Cluster.
   - Need the ClusterIP Service to provide objects (Pods) to everything inside the cluster.
-  - From outside Kubernetes Cluster (outside world), we cannot access the Pod even if the Deployment object has a ClusterIP Service.
+  - From outside Kubernetes Cluster (outside world), we cannot access the Pod even if the Deployment object has a ClusterIP Service. It allows for secure, isolated and efficient internal communication within the k8s cluster.
+  - **Controlled Access**: If you have services that should only be used by other services within the cluster (e.g., microservices communicating with each other), you can ensure that they remain hidden from outside traffic.
 - Use a `selector` so our service knows what set of Pods it is providing access to.
 - Traffic will enter through the Ingress Service instead.
 
@@ -106,12 +107,12 @@ spec:
 
 ```yaml
 selector:
-matchLabels:
-  component: worker
-template:
-metadata:
-  labels:
-  component: worker
+  matchLabels:
+    component: worker
+  template:
+  metadata:
+    labels:
+    component: worker
 ```
 
 - **Selector Labels**
@@ -175,6 +176,20 @@ spec:
 ```
 
 - From the above configuration, try to avoid setting `replicas: 2` because we will have 2 postgres server Pods writing to the same file system at the same time. BAD. Issue with data integrity.
+
+### Real-World Example
+
+Let’s say both Pods are handling transactions that modify customer orders in an e-commerce database:
+
+- **Pod A** starts a transaction to update an order’s status from "Pending" to "Shipped."
+- **Pod B** starts a different transaction to update the same order’s status from "Pending" to "Canceled."
+
+Both Pods try to write their updates to the same data files on the shared disk simultaneously:
+
+- **Pod A** writes "Shipped" to the file.
+- **Pod B** writes "Canceled" to the same file, possibly overwriting Pod A’s changes.
+
+This situation could lead to corrupted data and inconsistent database states.
 
 ### Kubernetes Volumes
 

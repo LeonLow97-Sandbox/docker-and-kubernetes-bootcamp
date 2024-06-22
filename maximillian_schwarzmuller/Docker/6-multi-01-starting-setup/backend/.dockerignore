@@ -1,4 +1,0 @@
-# files you dont want to be copied over to existing container
-node_moduules
-Dockerfile
-.git

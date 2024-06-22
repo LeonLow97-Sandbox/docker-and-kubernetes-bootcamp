@@ -10,7 +10,7 @@
 - Pod Status (Pending, ContainerCreating, Running)
 
   - Tells us where the Pod is in its lifecycle.
-  - When the Pod is first created, it is in the "Pending" state. This is when the kube-scheduler is figuring out which Node to place the Pod in. It also indicates that the Pod has been accepted by the Kubernetes system, but one oe more of its containers are not yet created, maybe due to delays in pulling container images.
+  - When the Pod is first created, it is in the "Pending" state. This is when the kube-scheduler is figuring out which Node to place the Pod in. It also indicates that the Pod has been accepted by the Kubernetes system, but one or more of its containers are not yet created, maybe due to delays in pulling container images.
   - If the kube-scheduler cannot find a Node to place the Pod, it will remain in "Pending" state.
   - Once the container is scheduled, it goes into "ContainerCreating" status where the images required for the application are pulled and the container starts.
   - Once all the containers in the Pod starts, it goes into "Running" state.
@@ -122,8 +122,8 @@ livenessProbe:
 - Metrics Server for CKAD
   - Retrieves metrics from each node and pod, aggregates them and stores them **in-memory** and does not store them on disk.
   - Cannot see historical data.
-  - kubelet receives instructions from kube api server and running pods and nodes. kubelet contains a sub-component called cAdvisor.
-  - cAdvisor retrieves performance metrics from Pods and exposing them on kubelet api and exposing them through kubelet api for metrics server
+  - The kubelet receives instructions from the Kubernetes API server regarding the running Pods and Nodes. It includes a sub-component called `cAdvisor`.
+  - `cAdvisor` retrieves performance metrics from Pods and exposes them through the kubelet API. These metrics are then made available to the metrics server via the kubelet API.
   - `minikube addons enable metrics-server`
   - `git clone https://github.com/kubernetes-incubator/metrics-server.git`: retrieve deployment files for metrics server
   - `kubectl create -f deploy/1.8+/`

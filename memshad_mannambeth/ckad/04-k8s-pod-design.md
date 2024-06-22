@@ -183,7 +183,7 @@ kubectl describe deployments nginx | grep -i image:
 
 - Blue/Green deployment involves running 2 identical production environments, Blue and Green,
   - where Blue is the current live environment and Green is the new version.
-- All Traffic is switched to Green after thorough testing, enabling a quick rollout to Blue if issues arise.
+- All Traffic is switched to Green after thorough testing, enabling a quick rollback to Blue if issues arise.
 - Procedure:
   1. Set labels on Blue deployment, e.g., version: v1
   2. Set selector on Service object, e.g., version: v1
@@ -202,7 +202,7 @@ kubectl describe deployments nginx | grep -i image:
   4. The service needs to:
   - Route traffic to both versions
   - Route a small percentage of traffic to Version 2
-  5. Set an additional label of e.g., app:front-end to both primary deployment and canary deployment. Also, change selector to app:frontend on Service object
+  5. Set an additional label of e.g., app:front-end to both primary deployment and canary deployment. Then, change selector to app:frontend on Service object to match the common label app:frontend on deployment.
   - However, now traffic is routed equally (50 - 50) to both Deployment
   - Need to reduce traffic to canary deployment
   6. Reduce number of Pods in Canary deployment to 1 (`replicas: 1`)

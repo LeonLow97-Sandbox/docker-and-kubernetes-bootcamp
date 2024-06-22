@@ -265,7 +265,7 @@ kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP          12
 
 ### Limitations in Config Updates For Pod
 
-- There are certain fields (those in red above) that we cannot update once the Pod has been created.
+- There are certain fields (those in red below) that we cannot update once the Pod has been created.
 - Change from `containerPort: 3000` to `containerPort: 9999`
 
 ```

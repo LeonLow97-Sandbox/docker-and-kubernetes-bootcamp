@@ -40,7 +40,7 @@
 - Production Web Server
 - Nginx routes incoming requests and it knows which request goes to the React Server and which request goes to the Express server.
 - On Client Side, we are making requests to `/api/values` but on the server side, we are receiving requests on `/values`.
-  - NGINX looks at the incoming request path. If it starts with `/`, redirect request to express server.
+  - NGINX looks at the incoming request path. If it starts with `/`, redirect request to react server.
   - If it starts with `/api`, redirect request to the express API, nginx removes `/api` and when it reaches express api, it will become `/values`
 
 ### Routing with NGINX

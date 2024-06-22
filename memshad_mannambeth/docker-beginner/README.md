@@ -315,11 +315,11 @@ networks:
   - Created and managed by Docker, volumes are a better choice for persistent data. They exist outside the lifecycle of a container and can be used by multiple containers simultaneously.
   - `docker run -v volume_name:/container/path ...`
   - Advantages:
-    - Data persistence: volumes are separated from containers, sock even if a container is removed, the data within the volume persists.
+    - Data persistence: volumes are separated from containers, so even if a container is removed, the data within the volume persists.
     - Shared storage: volumes can be shared among multiple containers, making it easier to manage data across different services.
 - Key Differences
   - **Lifecycle**: Bind mounts depend on the host filesystem and are directly affected by changes made on the host. Volumes are managed by Docker and persist independently of containers.
-  - **Sharing**: Volumes can be shared among multiple containers, while bind mounts are limited to one container's use.
+  - **Sharing**: both volumes and bind mounts can be shared among multiple containers.
   - **Ease of use**: Bind mounts are simpler to set up and use, especially for quick changes and local **development**. Volumes provide a more structured and controlled environment for managing persistent data and is good for **production**
 
 ---
