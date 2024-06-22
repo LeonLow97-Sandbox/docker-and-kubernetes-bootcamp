@@ -118,6 +118,7 @@ kubectl delete pvc myclaim
 ```
 
 - What happens to PV when a PVC bounded to it is deleted?
+
   - By default, PV has `persistentVolumeReclaimPolicy: Retain` When a PVC bound to it is deleted, the PV will remain until it is manually deleted by the administrator and is not available for reuse by other claims.
   - `persistentVolumeReclaimPolicy: Delete`: When a PVC bound to it is deleted, the PV will be deleted as well to free up storage space.
   - `persistentVolumeReclaimPolicy: Recycle`: When a PVC bound to it is deleted, the PV will be scrubbed (data cleared) and made available for a new claim.
@@ -136,8 +137,8 @@ spec:
     - name: myfrontend
       image: nginx
       volumeMounts:
-      - mountPath: "/var/www/html"
-        name: mypd
+        - mountPath: '/var/www/html'
+          name: mypd
   volumes:
     - name: mypd
       persistentVolumeClaim:
@@ -150,3 +151,63 @@ spec:
   - `emptyDir` is used to store data in a Pod only as long as that Pod is running on that node and when the Pod is deleted, the files are to be deleted as well.
   - `fc` is used to mount an existing Fibre channel volume into a Pod.
 
+## Storage Classes
+
+- Before PV is created, you must create disk on Google Cloud or other supported cloud platforms.
+- **Static Provisioning**: In Kubernetes, static provisioning involves the administrator manually creating PersistentVolumes (PVs) which are then matched to PersistentVolumeClaims (PVCs) made by users.
+- **Dynamic Provisioning**: In Kubernetes, dynamic provisioning allows the system to automatically create PersistentVolumes (PVs) based on user-defined PersistentVolumeClaims (PVCs) and StorageClasses.
+
+```sh
+gcloud beta compute disks create \
+  --size 1GB
+  --region us-ease1
+  pd-disk
+```
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol1
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 500Mi
+  gcePersistentDisk:
+    pdName: pd-disk
+    fsType: ext4
+```
+
+- Storage Classes: resource that defines the specifications and parameters for dynamically provisioning PersistentVolumes (PVs)
+- Example below is using GCP storage class
+
+```yaml
+# sc-definition.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: google-storage
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-standard
+  replication-type: none
+
+# pvc-definition.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myclaim
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: google-storage ## specify the storage class in pvc definition file.
+  resources:
+    requests:
+      storage: 500Mi
+```
+
+```sh
+kubectl get storageclass
+kubectl get sc
+```
