@@ -119,3 +119,49 @@ kubectl get pods
 # NAME    READY   STATUS              RESTARTS   AGE
 # nginx   0/1     ContainerCreating   0          2s
 ```
+
+# ReplicaSet
+
+## Kubernetes Controllers: The "Brain" of the Cluster
+
+<p align="center">
+    <img src="./diagrams/01-replication-controller-span-nodes.png" width="50%">
+</p>
+
+- **Definition**: Controllers are the **processes that monitor Kubernetes objects** and respond accordingly to ensure the system is running as desired.
+- **Replication Controller vs Replica Set**: These are 2 technologies used for the same purpose. The **Replication Controller** is the older technology, while the **Replica Set** is the new recommended way to set up replication.
+
+## Why use Replication?
+
+- **High Availability**: It ensures that is a Pod fails or crashes, another one is automatically brought up so users **never lose access** to the application.
+- **Reliability**: Even if you only need one pod, using a controller is beneficial because it **ensures that the specified number of pods are running at all times**, whether that number is 1 or 100.
+- **Load Balancing**: When user demand increases, controllers allow you to deploy **multiple pods to share the load** across different nodes in the cluster. The scheduling of pods onto multiple nodes is determined by the Scheduler.
+
+## YAML Configuration File
+
+A ReplicaSet definition file has 4 main sections:
+
+- `apiVersion`: For a ReplicaSet, this must be set to `apps/v1` (the older Replication Controller uses just v1).
+- `template`: This is a **nested pod definition** inside the controller's file. It tells the controller exactly what kind of pod to create if one fails or if more are needed.
+- `replicas`: This is a simple number that tells Kubernetes **how many instances** of the pod should be running at all times.
+- `selector`: This is a major difference for ReplicaSet. It uses a `matchLabels` filter to identify which pods it should monitor. This allows the ReplicaSet to manage pods that were created even before the controller itself was deployed.
+
+## Labels and Selectors
+
+<p align="center">
+    <img src="./diagrams/01-labels-and-selectors.png" width="50%">
+</p>
+
+- **Filtering**: Because a cluster might run hundreds of pods, **Labels** (key-value pairs) act as tags.
+- **Monitoring**: The ReplicaSet uses the **Selector** to "look" for pods with specific labels. If it finds fewer pods with that label than the number of "replicas" specified, it will launch new ones using the template.
+
+## Scaling the Application
+
+There are 2 main ways to increase or decrease the number of pods:
+
+1. **Update the File**: Change the `replicas` number in your YAML file and run the `kubectl apply` command.
+2. **Command Line**: Use the `kubectl scale` command to quickly change the number without editing the file (e.g., scaling from 3 to 6 replicas).
+
+## Analogy for Understanding
+
+Think of a **Replica Set** like a **Thermostat**. You set the "desired temperature" (the number of **replicas**). The thermostat (the **controller**) constantly monitors the room. If the room gets too cold (a pod fails), it turns on the heater (the **template**) to bring the temperature back up. If you decide you want the room warmer (scaling up), you simply turn the dial, and the thermostat works to reach that new target.

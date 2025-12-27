@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: myapp-replicaset
+  labels:
+    app: myapp
+    type: front-end
+spec:                 # replication controller
+  template:           # pod template
+    metadata:         # metadata of pod
+      name: myapp-pod 
+      labels:         
+        app: myapp
+        type: front-end
+    spec:             # pod spec
+      containers:     
+        - name: nginx-container
+          image: nginx
+  replicas: 3         # no. of pod replicas
+
+  # ReplicationController doesn't have selector
+  # ReplicaSet has selector to manage Pods that were created before the creation of ReplicaSet
+  selector:
+    matchLabels:
+      type: front-end # matches labels of the pod
