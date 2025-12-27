@@ -12,7 +12,7 @@ kubectl get nodes               # list the cluster nodes
 kubectl run nginx --image=nginx         # create a Pod named "nginx" using the nginx image
 kubectl get pods                        # list Pods in the current namespace
 kubectl create -f pod-definition.yaml   # create a Pod from a YAML manifest file
-kubectl describe pod <pod_name>         # show detailed information about a Pod (status, events, containers)
+kubectl describe pod <pod_name>         # show detailed information about a Pod (status, labels, image, events, containers)
 kubectl delete pod <pod_name>           # delete the specified Pod
 kubectl run redis --image=redis --dry-run=client -o yaml                # generate Pod YAML without creating it
 kubectl run redis --image=redis --dry-run=client -o yaml > redis.yaml   # save generated Pod YAML to a file

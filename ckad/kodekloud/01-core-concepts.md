@@ -76,3 +76,46 @@ When managign these environments, you will encounter 3 main tools, each with a d
 ## Analogy for Understanding
 
 Think of the **CRI** as a **universal power socket**. In the beginning, Kubernetes only had a "Docker-shaped" plug. When other tools wanted to join, Kubernetes created a **universal adapter (the CRI)**. As long as every appliance follows the same safety standards (**OCI**), they can all plug in. **Containerd** is like a modern, efficient motor that fits that socket perfectly, while **nerdctl** and **crictl** are the different remote controls used to check on or operate that motor.
+
+# Pods
+
+## What is a Pod?
+
+- **The Smallest Unit**: A pod is the **smallest object** you can create in Kubernetes.
+- **Encapsulation**: Kubernetes does not run containers diretly on nodes; instead, containers are wrapped into a pod. Think of a pods as a **single instance of your application**.
+- **Relationship with Containers**: Usually, there is a **1-to-1 relationship** between a pod and a container.
+
+## Scaling and Capacity
+
+- **Scaling Up**: If your application needs to handle more users, you **do not** add more containers to an existing pod. Instead you **create new pods** to run additional instances of the same application.
+- **Node Capacity**: If a single machine (node) runs out of space, you can add a new node to the cluster and deploy additional pods there.
+- **Scaling Down**: To reduce capacity, you simple delete the extra pods.
+
+## Multi-Container Pods
+
+- **Helper Containers**: While rare, a single pod can hold multiple containers. This is typically used for **"helper" tasks**, such as a separate container that processes user-uploaded files or data for the main application.
+- **Shared Resources**: Containers inside the same pod share the **same network space** (they can talk to each other using `localhost`) and the **same storage**.
+- **Shared Fate**: Containers in a pod share the same "fate" - they are **created together and destroyed together**.
+
+## Creating Pods with YAML Configuration
+
+Kubernetes uses YAML files to define objects. Every pod definition file must include 4 top-level fields:
+
+- `apiVersion`: The version of the Kubernetes API being used (for pods, this is usually `v1`). Specifies the API group and version used by the Kubernetes API server to understand and validate this resource.
+- `kind`: The type of object you are creating (in this case, Pod).
+- `metadata`: Information about the object, such as its **name** and **labels**. Labels are key-value pairs that help you group and filter pods later (e.g., making pods as "front-end" or "back-end").
+- `spec` (Specification): This is where you describe the technical details, such as the **container name** and the **image** (like nginx) that Kubernetes should pull from a repository like Docker Hub.
+
+## Analogy for Understanding
+
+Think of a **Pod** as a **physical shipping crate**. Inside the crate is your **Container** (the goods). If you need to ship more goods (scale your app), you don't try to stuff more into the same crate; you get a **second crate** (a new pod). Occasionally, a crate might contain a "helper" item, like a specialized cooling unit for the goods—they stay together, travel together, and arrive together because they are in the same crate.
+
+## What does the "Ready" column mean?
+
+> Running containers in Pod / Total containers in Pod
+
+```sh
+kubectl get pods
+# NAME    READY   STATUS              RESTARTS   AGE
+# nginx   0/1     ContainerCreating   0          2s
+```
