@@ -1,9 +1,11 @@
 # Miscellaneous
 
 ```sh
-kubectl run hello-minikube      # create a Pod named "hello-minikube" (uses a default image if configured)
-kubectl cluster-info            # show cluster API endpoint(s) and core service URLs
-kubectl get nodes               # list the cluster nodes
+kubectl run hello-minikube          # create a Pod named "hello-minikube" (uses a default image if configured)
+kubectl cluster-info                # show cluster API endpoint(s) and core service URLs
+kubectl get nodes                   # list the cluster nodes
+kubectl get all                     # view all objects in the cluster
+kubectl create deployment --help
 ```
 
 # Pods
@@ -52,4 +54,14 @@ kubectl explain replicaset # tells us the apiVersion to use
 kubectl apply -f replicaset-definition.yaml                 # increase replicas in definition file
 kubectl scale --replicas=6 -f replicaset-definition.yaml    # imperative command
 kubectl scale --replicas=6 replicaset myapp-replicaset      # imperative command
+```
+
+# Deployment
+
+```sh
+kubectl create -f deployment-definition.yaml # create a deployment
+kubectl get deployment
+kubectl get deploy
+kubectl describe deploy <deployment_name>
+kubectl create deployment my-dep --image=nginx --replicas=3 # Create a deployment named my-dep that runs the nginx image with 3 replicas
 ```

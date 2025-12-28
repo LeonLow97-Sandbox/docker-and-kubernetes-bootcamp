@@ -165,3 +165,24 @@ There are 2 main ways to increase or decrease the number of pods:
 ## Analogy for Understanding
 
 Think of a **Replica Set** like a **Thermostat**. You set the "desired temperature" (the number of **replicas**). The thermostat (the **controller**) constantly monitors the room. If the room gets too cold (a pod fails), it turns on the heater (the **template**) to bring the temperature back up. If you decide you want the room warmer (scaling up), you simply turn the dial, and the thermostat works to reach that new target.
+
+# Deployment
+
+<p align="center">
+    <img src="./diagrams/01-deployment.png" width="50%">
+</p>
+
+- **A Higher-Level Object**: A Deployment is a Kubernetes object that sits **higher in the hierarchy** than pods or replica sets. While pods run single instances and replica sets ensure multiple instances stay running, deployments manage the **entire lifecycle** of those instances.
+- **The Hierarchy of Management**: When you create a Deployment, it **automatically creates a Replica Set**, which then creates the necessary Pods. You can see all these layers at once using `kubectl get all` command.
+
+## Key Capabilities of Deployments
+
+Deployments are desiogned to handle production needs that simple replica sets cannot manage alone:
+
+- **Rolling Updates**: This allows you to upgrade your application to a newer version **seamlessly**. Instead of taking the whole app down, Kubernetes upgrades instances **one after the other**, ensuring users are never cut off during the process.
+- **Rollbacks**: If a recent update causes an unexpected error, a Deployment allows you to **undo the change** and roll back to a previous, stable version of the application.
+- **Pause and Resume**: You can pause the environment to make **multiple changes** - such as updating the server version, scaling the number of instances, and changing resource allocation - and then resume to apply all these changes **together** in a single rollout.
+
+## Analogy for Understanding
+
+Think of a **Deployment** as a **Professional Construction Manager**. The **Pods** are the **individual builders** doing the work, and the **Replica Set** is the **Site Foreman** making sure there are always enough builders on-site. The **Deployment (Manager)** is the one who plans how to replace old builders with new ones (Rolling Updates) without stopping the work, has a plan to revert to the old crew if the new ones fail (Rollbacks), and can pause the entire project to change the blueprints before allowing work to continue (Pause/Resume).
