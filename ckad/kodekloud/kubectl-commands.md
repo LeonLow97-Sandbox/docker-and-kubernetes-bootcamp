@@ -94,3 +94,12 @@ kubectl create -f compute-quota.yaml
 
 kubectl run redis --image=redis -n=finance # create redis pod in finance namespace
 ```
+
+# Service
+
+```sh
+kubectl create -f service-definition.yaml
+kubectl get service
+kubectl get svc
+kubectl describe svc <service_name> # to view information on labels, port, target port, ip (IP/IPs - ClusterIP, Endpoints - destination address of the Pod)
+```

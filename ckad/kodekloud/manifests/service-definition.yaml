@@ -1,0 +1,32 @@
+# NodePort
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec:
+  type: NodePort      # type of service
+  ports:
+    - targetPort: 80  # Pod (optional, if not provided, use `port`)
+      port: 80        # Service (compulsory)
+      nodePort: 30008 # Node (optional, if not provided, randomly assign 30000 - 32767)
+  selector:
+    # labels on the Pod, this links Service -> Pod
+    app: myapp
+    type: front-end
+
+---
+
+# ClusterIP
+apiVersion: v1
+kind: Service
+metadata:
+  name: back-end
+spec:
+  type: ClusterIP
+  ports:
+    - targetPort: 80
+      port: 80
+  selector:
+    # labels on the Pod, this links Service -> Pod
+    app: myapp
+    type: front-end

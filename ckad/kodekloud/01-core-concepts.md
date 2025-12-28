@@ -59,7 +59,7 @@ Think of a Kubernetes cluster like a **large professional kitchen**. The **Maste
 
 ## Essential Command-Line Tools (CLI)
 
-When managign these environments, you will encounter 3 main tools, each with a different purpose:
+When managing these environments, you will encounter 3 main tools, each with a different purpose:
 
 - **ctr (Ctor)**
     - This comes with containerd but is **solely for debugging**.
@@ -82,7 +82,7 @@ Think of the **CRI** as a **universal power socket**. In the beginning, Kubernet
 ## What is a Pod?
 
 - **The Smallest Unit**: A pod is the **smallest object** you can create in Kubernetes.
-- **Encapsulation**: Kubernetes does not run containers diretly on nodes; instead, containers are wrapped into a pod. Think of a pods as a **single instance of your application**.
+- **Encapsulation**: Kubernetes does not run containers directly on nodes; instead, containers are wrapped into a pod. Think of a pods as a **single instance of your application**.
 - **Relationship with Containers**: Usually, there is a **1-to-1 relationship** between a pod and a container.
 
 ## Scaling and Capacity
@@ -177,7 +177,7 @@ Think of a **Replica Set** like a **Thermostat**. You set the "desired temperatu
 
 ## Key Capabilities of Deployments
 
-Deployments are desiogned to handle production needs that simple replica sets cannot manage alone:
+Deployments are designed to handle production needs that simple replica sets cannot manage alone:
 
 - **Rolling Updates**: This allows you to upgrade your application to a newer version **seamlessly**. Instead of taking the whole app down, Kubernetes upgrades instances **one after the other**, ensuring users are never cut off during the process.
 - **Rollbacks**: If a recent update causes an unexpected error, a Deployment allows you to **undo the change** and roll back to a previous, stable version of the application.
@@ -191,7 +191,7 @@ Think of a **Deployment** as a **Professional Construction Manager**. The **Pods
 
 ## Understanding Namespaces
 
-- **The "House" Analogy**: Think of a Kubernetes cluster as a neighbourhood and **namespaces as individual houses**. Within a house, family members refer to each otehr by their first names. However, if you want to talk to someone in a different house, you must use their **full name** to identify them correctly.
+- **The "House" Analogy**: Think of a Kubernetes cluster as a neighborhood and **namespaces as individual houses**. Within a house, family members refer to each other by their first names. However, if you want to talk to someone in a different house, you must use their **full name** to identify them correctly.
 - **Isolation**: Namespaces provide a way to **isolate resources** within the same cluster. This is useful for separating different environments, such as **development (dev)** and **production (prod)**, so that work in one does not accidentally interfere with or modify the other.
 
 ## Default Namespaces
@@ -199,7 +199,7 @@ Think of a **Deployment** as a **Professional Construction Manager**. The **Pods
 When a Kubernetes cluster is first set up, it automatically creates 3 primary namespaces:
 
 - `default`: This is where your objects are placed if you do not specify a namespace. It is the environment you usually "play around" in when learning.
-- `kube-system`: This contains internal pods and services required by Kubernetes itself, such as networking and DNS. They are kept here to **preevnt accidental deletion or modification** by users.
+- `kube-system`: This contains internal pods and services required by Kubernetes itself, such as networking and DNS. They are kept here to **prevent accidental deletion or modification** by users.
 - `kube-public`: This namespace contains resources that should be **available to all users** across the entire cluster.
 
 ## Communication between namespaces
@@ -212,8 +212,66 @@ When a Kubernetes cluster is first set up, it automatically creates 3 primary na
 ## Resource Management and Policies
 
 - **Policies**: Each namespace can have its own **set of rules** defining who is allowed to perform specific actions.
-- **Resource Quotas**: You can set limits on the aount of resources a namespace can consume. This ensures a specific environment is **guaranteed certain resources** and cannot exceed its limit (e.g., limiting a namespace to 10 pods, 10 CPUs, or 10 GB of memory).
+- **Resource Quotas**: You can set limits on the amount of resources a namespace can consume. This ensures a specific environment is **guaranteed certain resources** and cannot exceed its limit (e.g., limiting a namespace to 10 pods, 10 CPUs, or 10 GB of memory).
 
 ## Analogy for Understanding
 
 Think of **Namespaces** like **operating different departments** within the same office building. The **Sales** and **Accounting** departments (namespaces) share the same electricity and water (the cluster), but they have different filing cabinets and internal rules. If a Sales person wants to talk to a colleague in their own department, they just shout "Hey, Mark!". But if they need to send mail to a "Mark" in Accounting, they must address the envelope with his **full name and department code** to make sure it gets to the right place.
+
+# Services
+
+## What is a Kubernetes Service?
+
+<p align="center">
+    <img src="./diagrams/01-service-to-pod.png" width="50%">
+</p>
+
+- **The Connector**: Services enable communication between various components within and outside of your application. They help connect different groups of pods, such as front-end tier connecting to a back-end process.
+- **Loose Coupling**: By using services, different microservices in your application remain "loosely coupled", meaning they can interact without being strictly tied to each other's specific locations.
+- **Stable Networking**: Because pods are ephemeral (they can go down and be replaced with new IP addresses), you cannot rely on pod IPs for communication. A service provides a **single, stable interface** (IP and name) to access a group of pods.
+
+<p align="center">
+    <img src="./diagrams/01-service-types.png" width="50%">
+</p>
+
+## NodePort Service (External Access)
+
+<p align="center">
+    <img src="./diagrams/01-nodeport.png" width="50%">
+</p>
+
+- **Purpose**: This service type makes an internal pod accessible to users outside the cluster by listening to a port on the physical or virtual **Node**.
+- 3 Key Ports:
+    - **Target Port**: The port on the **pod** where the application is actually running (e.g., port 80).
+    - **Port**: The port on the **service itself**, which acts like a virtual server inside the cluster.
+    - **NodePort**: The port on the **node** used for external access. These must be in the range of **30,000 - 32,767**.
+- **How it works**: When a user accesses the Node's IP address at the designated NodePort, the service maps that request through the node to the pod.
+
+## ClusterIP Service (Internal Access)
+
+<p align="center">
+    <img src="./diagrams/01-service-clusterip.png" width="50%">
+</p>
+
+- **Purpose**: This is the **default service type**. It creates a virtual IP inside the cluster to enable communication between different internal services, such as a front-end server talking to a back-end database.
+- **Internal Identity**: Each ClusterIP service gets its own IP and name. Other pods use this name or IP to communicate, rather than trying to track individual pod IPs.
+- **Efficiency**: It allows different layers of an application (like a web tier and a database tier) to scale or move independently without breaking communication.
+
+## How Services "Find" Pods (Labels & Selectors)
+
+- **Linking**: Services use **Labels and Selectors** to identify which pods they should manage.
+- **Matching**: In the service definition file, you provide a **selector** that matches the **labels** assigned to the pods.
+- **Automatic Updates**: If pods are added or removed, the service automatically updates itself to include or exclude them, making the system highly flexible.
+
+## Load Balancing & Multi-Node Support
+
+<p align="center">
+    <img src="./diagrams/01-service-multi-node.png" width="50%">
+</p>
+
+- **Random Distribution**: If a service manages multiple pods, it acts as a built-in load balancer. It typically uses a **random algorithm** to distribute incoming requests across all healthy pods.
+- **Cluster-Wide Reach**: When pods are spread across multiple nodes, Kubernetes automatically creates the service across the entire cluster. This means you can access the application using the **IP of any node** in the cluster on the same port.
+
+## Analogy for Understanding
+
+Think of a **Kubernetes Service** like a **company’s main reception desk**. Customers (external users) don't need to know the specific desk number (Pod IP) of an employee; they just call the main office number (NodePort). For internal staff, the reception desk acts like a **switchboard** (ClusterIP), routing calls to the "Accounting Department" (a group of pods) regardless of which specific accountant picks up the phone. Even if accountants change offices or leave the company, the internal extension for "Accounting" stays exactly the same.
