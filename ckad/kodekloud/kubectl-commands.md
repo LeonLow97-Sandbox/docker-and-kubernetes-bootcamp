@@ -32,7 +32,6 @@ kubectl get <resource> <name> -o yaml      # view/editable YAML
 kubectl get <resource> <name> -o json      # JSON form (less common in CKAD)
 kubectl get <resource> -o wide             # extra columns (node/IP/etc)
 kubectl get <resource> -o name             # just resource names (great for scripting)
-
 ```
 
 # Pods
@@ -51,7 +50,9 @@ kubectl run <pod_name> --help               # create a Pod using imperative comm
     kubectl run myapp --image=myapp-image   # create a Pod named "myapp" using the specified image
     kubectl run myapp --image=myapp-image --dry-run=client -o yaml                  # generate Pod YAML without creating it
     kubectl run myapp --image=myapp-image --dry-run=client -o yaml > myapp-pod.yaml # save generated Pod YAML to a file
+    kubectl run nginx --image=nginx -- <arg1> <arg2> # start nginx pod with custom arguments
 
+# Editing a Pod
 kubectl edit pod <pod_name>             # edit the Pod definition in your default text editor
     # only these are editable
     # spec.containers[*].image
@@ -59,6 +60,20 @@ kubectl edit pod <pod_name>             # edit the Pod definition in your defaul
     # spec.activeDeadlineSeconds
     # spec.tolerations
     # spec.terminationGracePeriodSeconds
+# For editting pods, you cannot edit things like environment variables, service accounts, resource limits of a running pod. If you really want to edit, there are 2 ways:
+# 1. Using the temporary file created
+kubectl edit pod webapp
+# error: pods "webapp" is invalid
+# A copy of your changes has been stored to "/tmp/kubectl-edit-ccvrq.yaml"
+# error: Edit cancelled, no valid changes were saved.
+kubectl replace --force -f /tmp/kubectl-edit-ccvrq.yaml
+# deletes the pod and recreates a new pod with the updated manifest file
+
+# 2. Extract pod definition in YAML format to a file
+kubectl get pod webapp -o yaml > new-pod.yaml
+vi new-pod.yaml
+kubectl delete pod webapp       # delete existing pod
+kubectl create -f new-pod.yaml  # create new pod with edited file
 ```
 
 # ReplicationController
