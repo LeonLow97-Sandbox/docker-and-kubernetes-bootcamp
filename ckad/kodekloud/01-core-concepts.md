@@ -186,3 +186,34 @@ Deployments are desiogned to handle production needs that simple replica sets ca
 ## Analogy for Understanding
 
 Think of a **Deployment** as a **Professional Construction Manager**. The **Pods** are the **individual builders** doing the work, and the **Replica Set** is the **Site Foreman** making sure there are always enough builders on-site. The **Deployment (Manager)** is the one who plans how to replace old builders with new ones (Rolling Updates) without stopping the work, has a plan to revert to the old crew if the new ones fail (Rollbacks), and can pause the entire project to change the blueprints before allowing work to continue (Pause/Resume).
+
+# Namespace
+
+## Understanding Namespaces
+
+- **The "House" Analogy**: Think of a Kubernetes cluster as a neighbourhood and **namespaces as individual houses**. Within a house, family members refer to each otehr by their first names. However, if you want to talk to someone in a different house, you must use their **full name** to identify them correctly.
+- **Isolation**: Namespaces provide a way to **isolate resources** within the same cluster. This is useful for separating different environments, such as **development (dev)** and **production (prod)**, so that work in one does not accidentally interfere with or modify the other.
+
+## Default Namespaces
+
+When a Kubernetes cluster is first set up, it automatically creates 3 primary namespaces:
+
+- `default`: This is where your objects are placed if you do not specify a namespace. It is the environment you usually "play around" in when learning.
+- `kube-system`: This contains internal pods and services required by Kubernetes itself, such as networking and DNS. They are kept here to **preevnt accidental deletion or modification** by users.
+- `kube-public`: This namespace contains resources that should be **available to all users** across the entire cluster.
+
+## Communication between namespaces
+
+- **Intra-namespace**: Resources in the same namespace can reach each other simple by using their name (e.g., a web-app reaching a database via db-service).
+- **Inter-namespace**: To reach a service in a different namespace, you must use its **Full Qualified Domain Name (FQDN)**. The format is `service-name.namespace.svc.cluster.local`.
+    - Example: To reach a database in the `dev` namespace from its `default` namespace, you would use `db-service.dev.svc.cluster.local`.
+    - `cluster.local` refers to the domain. `svc` is the service name.
+
+## Resource Management and Policies
+
+- **Policies**: Each namespace can have its own **set of rules** defining who is allowed to perform specific actions.
+- **Resource Quotas**: You can set limits on the aount of resources a namespace can consume. This ensures a specific environment is **guaranteed certain resources** and cannot exceed its limit (e.g., limiting a namespace to 10 pods, 10 CPUs, or 10 GB of memory).
+
+## Analogy for Understanding
+
+Think of **Namespaces** like **operating different departments** within the same office building. The **Sales** and **Accounting** departments (namespaces) share the same electricity and water (the cluster), but they have different filing cabinets and internal rules. If a Sales person wants to talk to a colleague in their own department, they just shout "Hey, Mark!". But if they need to send mail to a "Mark" in Accounting, they must address the envelope with his **full name and department code** to make sure it gets to the right place.

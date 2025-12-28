@@ -1,10 +1,12 @@
 # Miscellaneous
 
 ```sh
-kubectl run hello-minikube          # create a Pod named "hello-minikube" (uses a default image if configured)
-kubectl cluster-info                # show cluster API endpoint(s) and core service URLs
-kubectl get nodes                   # list the cluster nodes
-kubectl get all                     # view all objects in the cluster
+kubectl run hello-minikube              # create a Pod named "hello-minikube" (uses a default image if configured)
+kubectl cluster-info                    # show cluster API endpoint(s) and core service URLs
+kubectl get nodes                       # list the cluster nodes
+kubectl get all                         # view all objects in current namespace in the cluster
+kubectl get all -A                      # view all objects in all namespaces in the cluster
+kubectl get all --namespace=<namespace> # view all objects in a particular namespace
 kubectl create deployment --help
 ```
 
@@ -19,6 +21,7 @@ kubectl delete pod <pod_name>           # delete the specified Pod
 kubectl delete pods --all               # delete all pods
 kubectl run redis --image=redis --dry-run=client -o yaml                # generate Pod YAML without creating it
 kubectl run redis --image=redis --dry-run=client -o yaml > redis.yaml   # save generated Pod YAML to a file
+kubectl get pods -A | grep blue         # find pod with name `blue` in all namespaces
 
 kubectl edit pod <pod_name>             # edit a Pod’s configuration in the editor
     # only these are editable
@@ -64,4 +67,30 @@ kubectl get deployment
 kubectl get deploy
 kubectl describe deploy <deployment_name>
 kubectl create deployment my-dep --image=nginx --replicas=3 # Create a deployment named my-dep that runs the nginx image with 3 replicas
+```
+
+# Namespace
+
+```sh
+kubectl create -f namespace-dev.yaml
+kubectl create namespace dev
+
+kubectl create -f pod-definition.yaml --namespace=dev # create pod in dev namespace
+kubectl get pods --namespace=dev
+kubectl get pods -n dev
+kubectl get pods --all-namespaces   # retrieve pods in all namespaces
+kubectl get pods -A                 # retrieve pods in all namespaces
+
+kubectl get ns
+kubectl get namespaces
+
+# By default, you are in `default` namespace.
+kubectl config current-context
+kubectl config set-context kind-kind --namespace=dev
+kubectl config set-context $(kubectl config current-context) --namespace=dev
+
+# Set resource quota for namespace
+kubectl create -f compute-quota.yaml
+
+kubectl run redis --image=redis -n=finance # create redis pod in finance namespace
 ```
