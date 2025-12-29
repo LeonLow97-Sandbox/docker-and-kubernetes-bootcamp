@@ -163,7 +163,39 @@ kubectl run httpd --image=httpd:alpine --port=80 --expose true  # create a pod a
 
 kubectl expose pod redis --port=6379 --name=redis-service       # expose a pod as a service (ClusterIP type), pod must exist before exposing
     # ClusterIP (uses pod labels as selectors automatically)
-    kubectl expose pod redis --port=6379 --name=redis-service --dry-run=client -o yaml > redis-svc.yaml 
+    kubectl expose pod redis --port=6379 --name=redis-service --dry-run=client -o yaml > redis-svc.yaml
     # NodePort (generate then edit nodePort if needed), edit redis-svc.yaml: spec.ports[0].nodePort: 30080
     kubectl expose pod redis --port=80 --name=redis-service --type=NodePort --dry-run=client -o yaml > redis-svc.yaml
+```
+
+# ConfigMap
+
+```sh
+kubectl create -f configmap.yaml
+kubectl get configmap
+kubectl get cm
+kubectl describe cm <config-name>
+
+# Imperative Command
+kubectl create configmap <config-name> \
+    --from-literal=<key>=<value>
+kubectl create configmap <config-name> \
+    --from-file=<path-to-file>
+```
+
+# Secret
+
+```sh
+kubectl get secrets
+kubectl describe secrets <secret-name>      # view secrets (in bytes)
+kubectl get secret <secret-name> -o yaml    # view secrets (in base64 encoded form)
+
+echo -n 'decoded' | base64
+echo -n 'encoded' | base64 --decode
+
+# Imperative (creates base64 secrets)
+kubectl create secret generic <secret-name> \
+    --from-literal=<key>=<value>
+kubectl create secret generic <secret-name> \
+    --from-file=<path-to-file>
 ```

@@ -2,17 +2,17 @@
 
 ## Why create your Own Image?
 
-- **Customisation**: You create your own image when a service you need isn't available on Docker Hub or when you want to "Dockerise" your own applicaiton for easier shipping and deployment.
+- **Customization**: You create your own image when a service you need isn't available on Docker Hub or when you want to "Dockerise" your own application for easier shipping and deployment.
 - **Manual to Automated**: To build an image, you first think about the manual steps (e.g., choosing an OS, installing dependencies, copying code) and then translate those into a **Dockerfile**.
 
 ## The Dockerfile Basics
 
 - **Instruction Format**: A Dockerfile is a text file using an **INSTRUCTION argument** format (e.g., `FROM Ubuntu`).
 - **Key Instruction**:
-    - `FROM`: Every Dockerfile must start with this; it defines the **base operating system** or image.
-    - `RUN`: Tells Docker to run specific commands (like installing packages) while the image is being built.
-    - `COPY`: Moves files from your local system into the image.
-    - `ENTRYPOINT`: Specifies the main command that will run when the container starts up.
+  - `FROM`: Every Dockerfile must start with this; it defines the **base operating system** or image.
+  - `RUN`: Tells Docker to run specific commands (like installing packages) while the image is being built.
+  - `COPY`: Moves files from your local system into the image.
+  - `ENTRYPOINT`: Specifies the main command that will run when the container starts up.
 
 ## The Layered Architecture
 
@@ -34,7 +34,7 @@
 
 ## The Purpose of a Container
 
-- **Process-Driven**: Unlike virtual machines, containers are not designed to host a full operating system; they are meant to run a **speciic task or process**, such as a web server or database.
+- **Process-Driven**: Unlike virtual machines, containers are not designed to host a full operating system; they are meant to run a **specific task or process**, such as a web server or database.
 - **Lifecycle**: A container's life is tied directly to the process inside it. It **only lives as long as that process is alive**; if the process stops or crashes, the container exits immediately.
 - **The Ubuntu Example**: If you run a plain Ubuntu container, it exits quickly because its default command is bash. Since Docker doesn't usually attach a terminal by default, bash finds no input and terminates, causing the container to exit.
 
@@ -71,8 +71,8 @@ CMD [ "5" ]
 ## Translating Docker to Kubernetes
 
 - **Property Mapping**: When moving from Docker to Kubernetes, the names of the instructions change. It is important to remember that:
-    - The `command` field in Kubernetes overrides the `ENTRYPOINT` instruction in a Dockerfile.
-    - The `args` field in Kubernetes overrides the `CMD` instruction in a Dockerfile.
+  - The `command` field in Kubernetes overrides the `ENTRYPOINT` instruction in a Dockerfile.
+  - The `args` field in Kubernetes overrides the `CMD` instruction in a Dockerfile.
 
 ## Using the `args` field
 
@@ -83,39 +83,78 @@ CMD [ "5" ]
 ## Using the `command` field
 
 - **Purpose**: Use this field if you need to change the **actual executable** being run by the container.
-- **Example**: If your Docker image is set to run a standard `sleep` command as its entry point, but you want to use an alterntive version like `sleep 2.0`, you would define this in the `command` field.
+- **Example**: If your Docker image is set to run a standard `sleep` command as its entry point, but you want to use an alternative version like `sleep 2.0`, you would define this in the `command` field.
 - **Comparison to Docker**: This is equivalent of using the `--entrypoint` flag when running a manual `docker run` command.
 
 ## Summary for CKAD Prep
 
-|Docker file Instruction|Kubernetes Pod Field|Purpose|
-|--|--|--|
-|`ENTRYPOINT`|`command`|The main process/executable to run.|
-|`CMD`|`args`|The default parameters passed to the process.|
+| Docker file Instruction | Kubernetes Pod Field | Purpose                                       |
+| ----------------------- | -------------------- | --------------------------------------------- |
+| `ENTRYPOINT`            | `command`            | The main process/executable to run.           |
+| `CMD`                   | `args`               | The default parameters passed to the process. |
 
-# Cheatsheet for Commands and Arguments
+# CheatSheet for Commands and Arguments
 
 ## Docker
 
-| Dockerfile | `docker run ...` | What actually runs |
-|--|--|--|
-| `CMD ["sleep"]` | `docker run <image>` | `sleep` *(no args → usually exits “missing operand”)* |
-| `CMD ["sleep","5"]` | `docker run <image>` | `sleep 5` |
-| `CMD ["sleep","5"]` | `docker run <image> sleep 10` | `sleep 10` *(replaces CMD entirely)* |
-| `CMD ["sleep","5"]` | `docker run <image> 10` | `10` *(tries to exec `10` → fails; because it replaces CMD, not “append args”)* |
-| `ENTRYPOINT ["sleep"]` | `docker run <image>` | `sleep` *(no args → usually exits “missing operand”)* |
-| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run <image>` | `sleep 5` |
-| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run <image> 10` | `sleep 10` *(overrides CMD args)* |
-| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run --entrypoint sleep2 <image> 15` | `sleep2 15` *(overrides ENTRYPOINT, overrides CMD)* |
-| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run --entrypoint sleep2 <image>` | `sleep2 5` *(overrides ENTRYPOINT, keeps CMD as args)* |
+| Dockerfile                              | `docker run ...`                            | What actually runs                                                              |
+| --------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------- |
+| `CMD ["sleep"]`                         | `docker run <image>`                        | `sleep` _(no args → usually exits “missing operand”)_                           |
+| `CMD ["sleep","5"]`                     | `docker run <image>`                        | `sleep 5`                                                                       |
+| `CMD ["sleep","5"]`                     | `docker run <image> sleep 10`               | `sleep 10` _(replaces CMD entirely)_                                            |
+| `CMD ["sleep","5"]`                     | `docker run <image> 10`                     | `10` _(tries to exec `10` → fails; because it replaces CMD, not “append args”)_ |
+| `ENTRYPOINT ["sleep"]`                  | `docker run <image>`                        | `sleep` _(no args → usually exits “missing operand”)_                           |
+| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run <image>`                        | `sleep 5`                                                                       |
+| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run <image> 10`                     | `sleep 10` _(overrides CMD args)_                                               |
+| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run --entrypoint sleep2 <image> 15` | `sleep2 15` _(overrides ENTRYPOINT, overrides CMD)_                             |
+| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run --entrypoint sleep2 <image>`    | `sleep2 5` _(overrides ENTRYPOINT, keeps CMD as args)_                          |
 
 ## Kubernetes
 
 - If `command` and/or `args` specified in Pod spec, replaces `ENTRYPOINT` and/or `CMD` in Dockerfile.
 
-| Pod Spec | `kubectl run ...` | What actually runs |
-|--|--|--|
-| *(none)* | `kubectl run app --image=<image>` | image `ENTRYPOINT` + image `CMD` |
-| `args: ["10"]` | `kubectl run app --image=<image> -- 10` | image `ENTRYPOINT` + `10` *(CMD replaced)* |
-| `command: ["sleep2"]` | `kubectl run app --image=<image> --command -- sleep2` | `sleep2` + image `CMD` *(ENTRYPOINT replaced, CMD kept as args)* |
-| `command: ["sleep2"]`<br>`args: ["15"]` | `kubectl run app --image=<image> --command -- sleep2 15` | `sleep2 15` *(ENTRYPOINT + CMD both replaced)* |
+| Pod Spec                                | `kubectl run ...`                                        | What actually runs                                               |
+| --------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------- |
+| _(none)_                                | `kubectl run app --image=<image>`                        | image `ENTRYPOINT` + image `CMD`                                 |
+| `args: ["10"]`                          | `kubectl run app --image=<image> -- 10`                  | image `ENTRYPOINT` + `10` _(CMD replaced)_                       |
+| `command: ["sleep2"]`                   | `kubectl run app --image=<image> --command -- sleep2`    | `sleep2` + image `CMD` _(ENTRYPOINT replaced, CMD kept as args)_ |
+| `command: ["sleep2"]`<br>`args: ["15"]` | `kubectl run app --image=<image> --command -- sleep2 15` | `sleep2 15` _(ENTRYPOINT + CMD both replaced)_                   |
+
+# ConfigMap
+
+ConfigMaps are a vital tool in Kubernetes for **decoupling configuration data from application code**, making it much easier to manage settings across multiple environments.
+
+## Core Concepts
+
+- **What they are**: ConfigMaps are Kubernetes objects used to store **configuration data in the form of key-value pairs**.
+- **Purpose**: Instead of hardcoding environment variables inside every individual Pod definition file--which becomes difficult to manage as your cluster grows--you can **manage this data centrally**.
+- **Two-Phase Process**: Using ConfigMaps involves 2 distinct steps:
+  - first, create the ConfigMap
+  - second, inject it into the Pod
+
+## Step 1: Creating ConfigMaps
+
+2 primary ways to create a ConfigMap:
+
+- **Imperative Approach (Command Line)**: You can create a ConfigMap directly using the `kubectl create configmap` command without needing a separate definition file.
+  - **From Literal**: Use the `--from-literal` flag to specify key-value pairs directly in the terminal (e.g., app-color=blue).
+  - **From File**: Use the `--from-file` flag to pull configuration data from an external file.
+- **Declarative Approach (YAML File)**: You can create a **definition file** (similar to a Pod's YAML) with the following attributes:
+  ```yaml
+  apiVersion: v1
+  kind: ConfigMap
+  metadata: # includes name of the ConfigMap
+  data: # list of configurations in key-value format
+  ```
+
+## Step 2: Injecting into Pods
+
+Once created, you must "hand" the configuration to your container:
+
+- `envFrom`: In your Pod definition file, you add an `envFrom` property under the container specification.
+- **Linking**: You then provide the **name** of the specific ConfigMap you created. This makes all the key-value pairs available as **environment variables** inside the container.
+- **Alternative Methods**: While environment variables are common, configuration data can also be injected as **single variables** or as **files mounted in a volume**.
+
+## Analogy for Understanding
+
+Think of a **ConfigMap** like a **universal remote control profile**. Instead of going to every television (Pod) in a building and manually setting the brightness and volume (environment variables), you save those settings onto a single profile (ConfigMap). When you turn a television on, you simply tell it to "use the Lobby Profile," and it automatically configures itself based on the central settings you saved earlier.

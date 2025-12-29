@@ -24,7 +24,7 @@
 ## The Worker Node: The Execution Plane
 
 - **Kubelet**: This is an **agent that runs on every node** in the cluster. Its job is to ensure that containers are running as expected and to report the health of the worker node back to the master.
-- **Container Runtime**: This is the underlying software required to actually **run the containers**. While **Docker** is a common choice, other alternatives include *Rocket* or *Cri-o*.
+- **Container Runtime**: This is the underlying software required to actually **run the containers**. While **Docker** is a common choice, other alternatives include _Rocket_ or _Cri-o_.
 
 ## Managing the Cluster with `kubectl`
 
@@ -62,16 +62,16 @@ Think of a Kubernetes cluster like a **large professional kitchen**. The **Maste
 When managing these environments, you will encounter 3 main tools, each with a different purpose:
 
 - **ctr (Ctor)**
-    - This comes with containerd but is **solely for debugging**.
-    - It is not user-friendly, has limited features, and should not be used for managing containers in production.
+  - This comes with containerd but is **solely for debugging**.
+  - It is not user-friendly, has limited features, and should not be used for managing containers in production.
 - **nerdctl (Nerd Control)**
-    - This is a **general-purpose CLI** that acts like a "Docker-like" tool for containerd.
-    - It supports most Docker commands and adds advanced features like **image signing** and **lazy pulling**.
+  - This is a **general-purpose CLI** that acts like a "Docker-like" tool for containerd.
+  - It supports most Docker commands and adds advanced features like **image signing** and **lazy pulling**.
 - **crictl (CRI Control)**
-    - Maintained by the Kubernetes community, this tool works across **any CRI-compatible runtime** (not just containerd).
-    - It is used for **inspecting and debugging** the runtime from a Kubernetes perspective.
-    - **Pod Awareness**: Unlike Docker, `crictl` is "pod-aware", meaning it can list and manage Kubernetes pods directly.
-    - **Warning**: You should not use `crictl` to create containers in production because the Kubelet may delete them if it doesn't recognize them.
+  - Maintained by the Kubernetes community, this tool works across **any CRI-compatible runtime** (not just containerd).
+  - It is used for **inspecting and debugging** the runtime from a Kubernetes perspective.
+  - **Pod Awareness**: Unlike Docker, `crictl` is "pod-aware", meaning it can list and manage Kubernetes pods directly.
+  - **Warning**: You should not use `crictl` to create containers in production because the Kubelet may delete them if it doesn't recognize them.
 
 ## Analogy for Understanding
 
@@ -206,8 +206,8 @@ When a Kubernetes cluster is first set up, it automatically creates 3 primary na
 
 - **Intra-namespace**: Resources in the same namespace can reach each other simple by using their name (e.g., a web-app reaching a database via db-service).
 - **Inter-namespace**: To reach a service in a different namespace, you must use its **Full Qualified Domain Name (FQDN)**. The format is `service-name.namespace.svc.cluster.local`.
-    - Example: To reach a database in the `dev` namespace from its `default` namespace, you would use `db-service.dev.svc.cluster.local`.
-    - `cluster.local` refers to the domain. `svc` is the service name.
+  - Example: To reach a database in the `dev` namespace from its `default` namespace, you would use `db-service.dev.svc.cluster.local`.
+  - `cluster.local` refers to the domain. `svc` is the service name.
 
 ## Resource Management and Policies
 
@@ -242,9 +242,9 @@ Think of **Namespaces** like **operating different departments** within the same
 
 - **Purpose**: This service type makes an internal pod accessible to users outside the cluster by listening to a port on the physical or virtual **Node**.
 - 3 Key Ports:
-    - **Target Port**: The port on the **pod** where the application is actually running (e.g., port 80).
-    - **Port**: The port on the **service itself**, which acts like a virtual server inside the cluster.
-    - **NodePort**: The port on the **node** used for external access. These must be in the range of **30,000 - 32,767**.
+  - **Target Port**: The port on the **pod** where the application is actually running (e.g., port 80).
+  - **Port**: The port on the **service itself**, which acts like a virtual server inside the cluster.
+  - **NodePort**: The port on the **node** used for external access. These must be in the range of **30,000 - 32,767**.
 - **How it works**: When a user accesses the Node's IP address at the designated NodePort, the service maps that request through the node to the pod.
 
 ## ClusterIP Service (Internal Access)
