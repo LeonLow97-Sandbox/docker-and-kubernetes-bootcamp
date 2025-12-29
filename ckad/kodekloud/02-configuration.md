@@ -266,3 +266,78 @@ Security Contexts in Kubernetes allow you to define **security standards** for y
 ## Analogy for Understanding
 
 Think of the **Pod-level Security Context** as the **"House Rules"** for an apartment. If the house rule says "Everyone must take their shoes off," then every person in every room follows that rule. However, a **Container-level Security Context** is like a **"Room Rule"**. If one specific person decides that in their bedroom they will wear shoes, that specific "Room Rule" **overrides** the "House Rule" for that person only, while everyone else in the house continues to follow the original rule.
+
+# Resource Requirements
+
+## Resource Requests (Minimum Guarantee)
+
+<p align="center">
+    <img src="./diagrams/02-assign-pods-to-nodes.png" width="50%">
+</p>
+<p align="center">
+    <img src="./diagrams/02-assign-pods-to-new-nodes.png" width="50%">
+</p>
+
+- A **request** is the minimum amount of CPU or memory a container is guaranteed to have.
+- **The Scheduler's Role**: When you create a pod, the **Kubernetes Scheduler** looks for a node that has enough free space to meet the pod's requests.
+- **Pending State**: If no node has enough available resources to meet the request, the pod will stay in a "pending" state until resources become available.
+- **Measuring Units**:
+  - **CPU**: Measures in vCPUs or "millicores". For example, 1.0 CPU is 1 full core, while 0.1 CPU can be written as 100m (100 milli).
+  - **Memory**: Can be measured in decimal units like Megabytes (M) and Gigabytes (G), or binary units like Mebibytes (Mi) and Gigabytes (Gi). Note that 1Gi is 1024MB, while 1G is 1000MB.
+
+## Resource Limits (Maximum Cap)
+
+<p align="center">
+    <img src="./diagrams/02-resource-limits.png" width="50%">
+</p>
+<p align="center">
+    <img src="./diagrams/02-insufficient-cpu.png" width="50%">
+</p>
+
+- A **limit** is the absolute maximum amount of resources a container can consume.
+- **CPU Throttling**: If a container tries to use more CPU than its limit, Kubernetes throttles it. It doesn't kill the pod; it just restrict its processing speed.
+- **Memory Termination (OOM)**: Memory works differently. If a pod constantly tries to exceed its memory limit, it will be terminated with an **Out of Memory Killed (OOMKilled) error**. This is because, unlike CPU, memory cannot be "slowed down"; if it's gone, the pod must be killed to free up space.
+
+<p align="center">
+    <img src="./diagrams/02-mem-exceeds-limit.png" width="50%">
+</p>
+
+## Configuration Scenarios
+
+<p align="center">
+    <img src="./diagrams/02-cpu-request-and-limit.png" width="50%">
+</p>
+<p align="center">
+    <img src="./diagrams/02-mem-request-and-limit.png" width="50%">
+</p>
+
+- **No Requests, No Limits**
+  - Container can sue lots of resources
+  - Risk: one Pod can **starve** others (bad multi-tenant behavior).
+- **Limits set, Requests not set**
+  - Kubernetes automatically sets **request = limit**.
+  - Each Pod gets guaranteed that amount and cannot exceed it.
+- **Requests and limits both set (different values)**
+  - Pod is guaranteed the request.
+  - Pod can burst up to the limit.
+  - Still capped even if the node has free resources.
+- **Requests set, no limits** ✅
+  - **Often ideal for CPU**:
+    - Guaranteed baseline via requests. Can burst above request if CPU is available.
+  - **But be careful**:
+    - All Pods should have requests, or a "no-request" Pod might get starved.
+  - For **memory**, "requests without limits" can be risky:
+    - If memory pressure happens, Kubernetes may have to kill Pods because memory can't be throttled.
+
+## Administrative Controls (Namespace Level)
+
+- `LimitRange`: You can set **default** requests and limits for a specific namespace. If a user creates a pod without defining resources, the `LimitRange` automatically applies these defaults. It also sets "min" and "max" boundaries for what a user is allowed to request.
+- `ResourceQuota`: This acts as a **total budget** for a namespace. It limits the *sum* of all requests and limits across all pods in that namespace (e.g., "this department can only use 10 CPUs total").
+
+<p align="center">
+    <img src="./diagrams/02-resource-quota.png" width="75%">
+</p>
+
+## Analogy for Understanding
+
+Think of a **Resource Request** as a **hotel reservation**; the hotel (the node) ensures your room is ready before you arrive. A **Resource Limit** is like a **credit limit** on your spending; if it's CPU, the bank just slows down your transactions (throttling), but if it's Memory (cash), and you try to spend more than you have, they immediately close your account (OOMKill).

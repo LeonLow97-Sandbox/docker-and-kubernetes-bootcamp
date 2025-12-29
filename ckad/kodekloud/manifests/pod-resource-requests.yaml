@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx
+      ports:
+        - containerPort: 8080
+      # Pod resource requests
+      resources:
+        requests:
+          # Memory
+          # 256 Mi = 256 MB
+          memory: "1Gi"
+          # CPU
+          # 0.1 = 100 MB
+          # 1 CPU = 1 AWS vCPU = 1 GCP Core = 1 Azure Core
+          cpu: 2
+        limits:
+          memory: "2Gi"
+          cpu: 2

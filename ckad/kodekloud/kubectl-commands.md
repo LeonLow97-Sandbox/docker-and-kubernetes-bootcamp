@@ -205,3 +205,10 @@ kubectl create secret generic <secret-name> \
 ```sh
 kubectl exec ubuntu-sleeper -- whoami # check the user executing the process
 ```
+
+# Resource Limits, Requests and Quotas
+
+```sh
+# ResourceQuota
+kubectl create -f ./resource-quota.yaml --namespace=myspace # resource quota is namespace-level object
+```
