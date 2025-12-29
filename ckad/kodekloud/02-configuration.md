@@ -245,3 +245,24 @@ Understanding how Docker handles security and isolation on a single host.
 ## Analogy for Understanding
 
 Think of the Docker host as an **apartment building** and containers as the **individual flats**. Every tenant (container) shares the same plumbing and foundation (the kernel), but they have their own front doors (namespaces) so they can't see into each other's rooms. Even though you are the "boss" (root) of your own flat, the building rules (capabilities) prevent you from doing things that would affect everyone else, like knocking down a load-bearing wall or shutting off the water for the whole building.
+
+# Kubernetes Security Contexts: Managing Permissions
+
+Security Contexts in Kubernetes allow you to define **security standards** for your workloads, such as specifying which user a process runs as or what system-level privileges it has.
+
+## Core Concepts
+
+- **Defining Standards**: Just as you can set security standards in Docker (like User IDs and Linux capabilities), Kubernetes allows you to configure these settings within your cluster.
+- **2 Levels of Configuration**: You can choose to apply security settings at 2 different levels within your manifest file:
+  - **Pod Level**: Settings defined here are **inherited by all containers** within the Pod.
+  - **Container Level**: Settings defined here apply **only to that specific container**.
+- **The Override Rule**: If you define a security setting at both levels, the **container-level configuration will override** the Pod-level setting.
+
+## Key Security Settings
+
+- **User IDs** (`runAsUser`): You can specify the exact **User ID** that the container's processes should use by running the `runAsUser` option. This is a critical security step to ensure processes do not run with unnecessary privileges.
+- **Linux Capabilities**: Using th `capabilities` option, you can **add or remove specific system privileges**. As we previously discussed regarding Docker security, these allow for fine-grained control over what a container can do to the host kernel, such as modifying the system clock or network configuration.
+
+## Analogy for Understanding
+
+Think of the **Pod-level Security Context** as the **"House Rules"** for an apartment. If the house rule says "Everyone must take their shoes off," then every person in every room follows that rule. However, a **Container-level Security Context** is like a **"Room Rule"**. If one specific person decides that in their bedroom they will wear shoes, that specific "Room Rule" **overrides** the "House Rule" for that person only, while everyone else in the house continues to follow the original rule.

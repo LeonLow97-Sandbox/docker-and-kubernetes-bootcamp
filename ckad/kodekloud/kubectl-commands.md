@@ -195,7 +195,13 @@ echo -n 'encoded' | base64 --decode
 
 # Imperative (creates base64 secrets)
 kubectl create secret generic <secret-name> \
-    --from-literal=<key>=<value>
+  --from-literal=<key>=<value>
 kubectl create secret generic <secret-name> \
-    --from-file=<path-to-file>
+  --from-file=<path-to-file>
+```
+
+# Kubernetes Security
+
+```sh
+kubectl exec ubuntu-sleeper -- whoami # check the user executing the process
 ```
