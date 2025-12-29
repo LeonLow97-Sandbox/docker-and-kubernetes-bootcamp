@@ -66,18 +66,56 @@ CMD [ "5" ]
 - **JSON Format**: For `ENTRYPOINT` and `CMD` to work together correctly, they should be written in **JSON array format**.
 - **Separation**: Each element (the executable and its parameters) must be a **separate string** within the array (e.g., `["sleep", "5"]`).
 
+# Kubernetes Pod Commands and Arguments
+
+## Translating Docker to Kubernetes
+
+- **Property Mapping**: When moving from Docker to Kubernetes, the names of the instructions change. It is important to remember that:
+    - The `command` field in Kubernetes overrides the `ENTRYPOINT` instruction in a Dockerfile.
+    - The `args` field in Kubernetes overrides the `CMD` instruction in a Dockerfile.
+
+## Using the `args` field
+
+- **Purpose**: This field is used to pass additional arguments to the container's startup command.
+- **Overriding Defaults**: If a Docker image has a default parameter (like a 5-second sleep timer), you can change it to 10 seconds by specifying "10" in the args section of the Pod definition.
+- **Format**: Arguments must be provided in the form of an **array** within the Pod YAML file.
+
+## Using the `command` field
+
+- **Purpose**: Use this field if you need to change the **actual executable** being run by the container.
+- **Example**: If your Docker image is set to run a standard `sleep` command as its entry point, but you want to use an alterntive version like `sleep 2.0`, you would define this in the `command` field.
+- **Comparison to Docker**: This is equivalent of using the `--entrypoint` flag when running a manual `docker run` command.
+
+## Summary for CKAD Prep
+
+|Docker file Instruction|Kubernetes Pod Field|Purpose|
+|--|--|--|
+|`ENTRYPOINT`|`command`|The main process/executable to run.|
+|`CMD`|`args`|The default parameters passed to the process.|
+
 # Cheatsheet for Commands and Arguments
 
 ## Docker
 
 | Dockerfile | `docker run ...` | What actually runs |
-|--|--|:-:|
+|--|--|--|
 | `CMD ["sleep"]` | `docker run <image>` | `sleep` *(no args → usually exits “missing operand”)* |
 | `CMD ["sleep","5"]` | `docker run <image>` | `sleep 5` |
 | `CMD ["sleep","5"]` | `docker run <image> sleep 10` | `sleep 10` *(replaces CMD entirely)* |
 | `CMD ["sleep","5"]` | `docker run <image> 10` | `10` *(tries to exec `10` → fails; because it replaces CMD, not “append args”)* |
 | `ENTRYPOINT ["sleep"]` | `docker run <image>` | `sleep` *(no args → usually exits “missing operand”)* |
-| `ENTRYPOINT ["sleep"]` + `CMD ["5"]` | `docker run <image>` | `sleep 5` |
-| `ENTRYPOINT ["sleep"]` + `CMD ["5"]` | `docker run <image> 10` | `sleep 10` *(overrides CMD args)* |
-| `ENTRYPOINT ["sleep"]` + `CMD ["5"]` | `docker run --entrypoint sleep2 <image> 15` | `sleep2 15` *(overrides ENTRYPOINT, overrides CMD)* |
-| `ENTRYPOINT ["sleep"]` + `CMD ["5"]` | `docker run --entrypoint sleep2 <image>` | `sleep2 5` *(overrides ENTRYPOINT, keeps CMD as args)* |
+| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run <image>` | `sleep 5` |
+| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run <image> 10` | `sleep 10` *(overrides CMD args)* |
+| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run --entrypoint sleep2 <image> 15` | `sleep2 15` *(overrides ENTRYPOINT, overrides CMD)* |
+| `ENTRYPOINT ["sleep"]` <br> `CMD ["5"]` | `docker run --entrypoint sleep2 <image>` | `sleep2 5` *(overrides ENTRYPOINT, keeps CMD as args)* |
+
+## Kubernetes
+
+- If `command` and/or `args` specified in Pod spec, replaces `ENTRYPOINT` and/or `CMD` in Dockerfile.
+
+| Pod Spec | `kubectl run ...` | What actually runs |
+|--|--|--|
+| *(none)* | `kubectl run app --image=<image>` | image `ENTRYPOINT` + image `CMD` |
+| `args: ["10"]` | `kubectl run app --image=<image> -- 10` | image `ENTRYPOINT` + `10` *(CMD replaced)* |
+| `command: ["sleep2"]` | `kubectl run app --image=<image> --command -- sleep2` | `sleep2` + image `CMD` *(ENTRYPOINT replaced, CMD kept as args)* |
+| `command: ["sleep2"]`<br>`args: ["15"]` | `kubectl run app --image=<image> --command -- sleep2 15` | `sleep2 15` *(ENTRYPOINT + CMD both replaced)* |
