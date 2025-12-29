@@ -169,28 +169,28 @@ While ConfigMap handle general settings, **Secrets** are designed specifically t
 
 ## Core Concepts
 
-- **Purpose**: Secrets allow you to avoid hardcoding sensitive credentials directly into your application code or Pod definitino.
+- **Purpose**: Secrets allow you to avoid hardcoding sensitive credentials directly into your application code or Pod definition.
 - **Encoding vs Encryption**: Unlike ConfigMaps which store data in plain text, Secrets are **stored in an encoded format (Base64)**. It is important to note that **encoding is not the same as encryption**; anyone with the encoded string can easily decode it back to plain text.
 - **Workflow**: Similar to other Kubernetes objects, you follow a 2 step process:
-    - create the Secret
-    - inject it into the Pod.
+  - create the Secret
+  - inject it into the Pod.
 
 ## Step 1: Creating Secrets
 
 Create Secrets using 2 main methods:
 
 - **Imperative (Command Line)**:
-    - Use `kubectl create secret generic` followed by the secret name.
-    - Use `--from-literal` flag to define key-value pairs directly in the command (e.g., `db-password=password123`).
-    - Use `--from-file` flag to import data from a specific file path.
-- **Declarative (YAML File)**: 
-    ```yaml
-    apiversion: v1
-    kind: Secret
-    metadata:
-    data:
-    ```
-    - **Manual Encoding Required**: When writing the YAML file, you cannot use plain text. You must **manually convert your data to Base64** (using a tool like Linux `echo -n 'secret' | base64`) before pasting it into the `data` section.
+  - Use `kubectl create secret generic` followed by the secret name.
+  - Use `--from-literal` flag to define key-value pairs directly in the command (e.g., `db-password=password123`).
+  - Use `--from-file` flag to import data from a specific file path.
+- **Declarative (YAML File)**:
+  ```yaml
+  apiVersion: v1
+  kind: Secret
+  metadata:
+  data:
+  ```
+  - **Manual Encoding Required**: When writing the YAML file, you cannot use plain text. You must **manually convert your data to Base64** (using a tool like Linux `echo -n 'secret' | base64`) before pasting it into the `data` section.
 
 ## Step 2: Injecting Secrets into Pods
 
@@ -198,6 +198,7 @@ Once a Secret exists in the cluster, you can provide it to your application in m
 
 - **Environment Variables**: Use the `envFrom` property in the Pod definition to load all keys from a Secret as environment variables.
 - **Volume Mounts**: You can mount a Secret as a **volume**. In this case, Kubernetes creates a directory where **each key in the Secret becomes a file**, and the content of that file is the secret value.
+
 <p align="center">
     <img src="./diagrams/02-secrets-in-pods-as-volumes.png" width="50%">
 </p>
@@ -210,3 +211,37 @@ Because Base64 encoding is easily broken, Kubernetes employs several internal me
 - **Memory-Only Storage**: Kubernetes stores Secrets in `tmpfs` (RAM) on the nodes, ensuring sensitive data is **never written to a physical disk storage**.
 - **Automatic Detection**: Once a Pod depending on a Secret is deleted, the local copy of that Secret on the node is also wiped.
 - Avoid checking Secret YAML files into source code repositories like GitHub and enable **Encryption at Rest** so that Secrets are encrypted while stored in ETCD. For even high security, consider external tools like **HashiCorp Vault**.
+
+# Docker Security and Process Isolation
+
+Understanding how Docker handles security and isolation on a single host.
+
+## Process Isolation via Namespaces
+
+<p align="center">
+    <img src="./diagrams/02-docker-namespaces.png" width="50%">
+</p>
+
+- **Shared Kernel**: Unlike virtual machines, containers are **not completely isolated** from their host; they share the same underlying operating system kernel.
+- **Namespaces**: Docker uses a Linux feature called **namespaces** to create isolation. While the host has its own namespace, each container is tucked away in its own private namespace.
+- **Process Visibility**: From inside a container, a process (like a "sleep" command) might appear to have a **Process ID (PID)** of 1. However, on the Docker host, that same process is visible but will have a **different PID**, as the host sees all processes across the entire system.
+
+## User Security and Root Access
+
+- **Default User**: By default, Docker runs all processes within a container as the **root user**.
+- **Changing Users**: To improve security, you can force a process to run as a **non-root user** by specifying a user ID during the `docker run` command or by defining it in the **Docker Image** itself using the `USER` instruction.
+- **The "Root" Myth**: The root user inside a container is **not the same** as the root user on the host. Docker restricts what this user can do to prevent it from being dangerous to the rest of the system.
+
+## Linux Capabilities
+
+<p align="center">
+    <img src="./diagrams/02-linux-capabilities.png" width="50%">
+</p>
+
+- **Fine-Grained Control**: Instead of giving the root user full power, Docker uses **Linux capabiliites** to limit their abilities.
+- **Restricted Actions**: By default, a container cannot perform disruptive tasks like **rebooting the host** or manipulating the system clock, even if it is running as root.
+- **Customizing Privileges**: You can manually add or remove these specific permissions using the `--cap-add` or `--cap-drop` flags. if a container needs total control, the `--privileged` flag can be used to enable all privileges.
+
+## Analogy for Understanding
+
+Think of the Docker host as an **apartment building** and containers as the **individual flats**. Every tenant (container) shares the same plumbing and foundation (the kernel), but they have their own front doors (namespaces) so they can't see into each other's rooms. Even though you are the "boss" (root) of your own flat, the building rules (capabilities) prevent you from doing things that would affect everyone else, like knocking down a load-bearing wall or shutting off the water for the whole building.
