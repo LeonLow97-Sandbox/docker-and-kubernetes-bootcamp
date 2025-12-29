@@ -122,6 +122,10 @@ CMD [ "5" ]
 
 # ConfigMap
 
+<p align="center">
+    <img src="./diagrams/02-env-value-types.png" width="50%">
+</p>
+
 ConfigMaps are a vital tool in Kubernetes for **decoupling configuration data from application code**, making it much easier to manage settings across multiple environments.
 
 ## Core Concepts
@@ -158,3 +162,51 @@ Once created, you must "hand" the configuration to your container:
 ## Analogy for Understanding
 
 Think of a **ConfigMap** like a **universal remote control profile**. Instead of going to every television (Pod) in a building and manually setting the brightness and volume (environment variables), you save those settings onto a single profile (ConfigMap). When you turn a television on, you simply tell it to "use the Lobby Profile," and it automatically configures itself based on the central settings you saved earlier.
+
+# Secret
+
+While ConfigMap handle general settings, **Secrets** are designed specifically to protect **sensitive information** such as passwords, API keys, and certificates.
+
+## Core Concepts
+
+- **Purpose**: Secrets allow you to avoid hardcoding sensitive credentials directly into your application code or Pod definitino.
+- **Encoding vs Encryption**: Unlike ConfigMaps which store data in plain text, Secrets are **stored in an encoded format (Base64)**. It is important to note that **encoding is not the same as encryption**; anyone with the encoded string can easily decode it back to plain text.
+- **Workflow**: Similar to other Kubernetes objects, you follow a 2 step process:
+    - create the Secret
+    - inject it into the Pod.
+
+## Step 1: Creating Secrets
+
+Create Secrets using 2 main methods:
+
+- **Imperative (Command Line)**:
+    - Use `kubectl create secret generic` followed by the secret name.
+    - Use `--from-literal` flag to define key-value pairs directly in the command (e.g., `db-password=password123`).
+    - Use `--from-file` flag to import data from a specific file path.
+- **Declarative (YAML File)**: 
+    ```yaml
+    apiversion: v1
+    kind: Secret
+    metadata:
+    data:
+    ```
+    - **Manual Encoding Required**: When writing the YAML file, you cannot use plain text. You must **manually convert your data to Base64** (using a tool like Linux `echo -n 'secret' | base64`) before pasting it into the `data` section.
+
+## Step 2: Injecting Secrets into Pods
+
+Once a Secret exists in the cluster, you can provide it to your application in multiple ways:
+
+- **Environment Variables**: Use the `envFrom` property in the Pod definition to load all keys from a Secret as environment variables.
+- **Volume Mounts**: You can mount a Secret as a **volume**. In this case, Kubernetes creates a directory where **each key in the Secret becomes a file**, and the content of that file is the secret value.
+<p align="center">
+    <img src="./diagrams/02-secrets-in-pods-as-volumes.png" width="50%">
+</p>
+
+## Security Best Practices
+
+Because Base64 encoding is easily broken, Kubernetes employs several internal mechanisms and best practices to keep secrets safe:
+
+- **Node-Specific Delivery**: A Secret is only sent to a node if a Pod running on that node specifically requires it.
+- **Memory-Only Storage**: Kubernetes stores Secrets in `tmpfs` (RAM) on the nodes, ensuring sensitive data is **never written to a physical disk storage**.
+- **Automatic Detection**: Once a Pod depending on a Secret is deleted, the local copy of that Secret on the node is also wiped.
+- Avoid checking Secret YAML files into source code repositories like GitHub and enable **Encryption at Rest** so that Secrets are encrypted while stored in ETCD. For even high security, consider external tools like **HashiCorp Vault**.

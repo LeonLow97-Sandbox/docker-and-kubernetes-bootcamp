@@ -187,7 +187,7 @@ kubectl create configmap <config-name> \
 
 ```sh
 kubectl get secrets
-kubectl describe secrets <secret-name>      # view secrets (in bytes)
+kubectl describe secrets <secret-name>      # view secrets (in bytes, hides the actual values)
 kubectl get secret <secret-name> -o yaml    # view secrets (in base64 encoded form)
 
 echo -n 'decoded' | base64
