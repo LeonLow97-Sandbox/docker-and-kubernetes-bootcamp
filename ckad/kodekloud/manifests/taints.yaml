@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  spec:
+    containers:
+    - name: nginx-container
+      image: nginx
+    tolerations:    # Values MUST be double quoted
+    - key: "app"
+      operator: "Equal"
+      value: "blue"
+      effect: "NoSchedule"
+
+# kubectl taint nodes node1 app=blue:NoSchedule

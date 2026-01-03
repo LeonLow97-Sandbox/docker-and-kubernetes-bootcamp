@@ -40,6 +40,7 @@ kubectl get <resource> -o name             # just resource names (great for scri
 kubectl create -f pod-definition.yaml   # create a Pod using the definition file
 kubectl get pods                        # list Pods in the current namespace
 kubectl get pod <pod_name> -o yaml      # get Pod definition in YAML format
+kubectl get pods --watch
 kubectl describe pod <pod_name>         # show detailed information about all Pods (status, labels, image, events, containers)
 kubectl delete pod <pod_name>           # delete the specified Pod
 kubectl delete pod --all                # delete all Pods in the current namespace
@@ -229,4 +230,14 @@ kubectl describe pod <pod_name>
     # this token is for the pod to authenticate with the kubernetes api
 
 kubectl create token <serviceaccount_name> # Since v1.24, tokens are no longer created automatically with the service account. This command is used to request a time-limited security token for a specific Kubernetes service account, decode the token in jwt.io. This command uses the TokenRequestAPI
+```
+
+# Taints and Tolerations
+
+```sh
+kubectl taint nodes <node_name> key=value:taint-effect # taint-effect is what happens to pods that do not tolerate the taint --> NoSchedule, PreferNoSchedule, NoExecute
+    kubectl taint nodes node1 app=myapp:NoSchedule
+kubectl taint node <node_name> key=value:NoSchedule- # to remove taint, specify a `-` at the end.
+
+kubectl describe node kubemaster | grep Taint  # view taint on Master node
 ```
