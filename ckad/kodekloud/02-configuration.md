@@ -332,7 +332,7 @@ Think of the **Pod-level Security Context** as the **"House Rules"** for an apar
 ## Administrative Controls (Namespace Level)
 
 - `LimitRange`: You can set **default** requests and limits for a specific namespace. If a user creates a pod without defining resources, the `LimitRange` automatically applies these defaults. It also sets "min" and "max" boundaries for what a user is allowed to request.
-- `ResourceQuota`: This acts as a **total budget** for a namespace. It limits the *sum* of all requests and limits across all pods in that namespace (e.g., "this department can only use 10 CPUs total").
+- `ResourceQuota`: This acts as a **total budget** for a namespace. It limits the *sum* of all requests and limits across **all pods** in that **namespace** (e.g., "this department can only use 10 CPUs total").
 
 <p align="center">
     <img src="./diagrams/02-resource-quota.png" width="75%">
@@ -341,3 +341,82 @@ Think of the **Pod-level Security Context** as the **"House Rules"** for an apar
 ## Analogy for Understanding
 
 Think of a **Resource Request** as a **hotel reservation**; the hotel (the node) ensures your room is ready before you arrive. A **Resource Limit** is like a **credit limit** on your spending; if it's CPU, the bank just slows down your transactions (throttling), but if it's Memory (cash), and you try to spend more than you have, they immediately close your account (OOMKill).
+
+# Service Account
+
+<p align="center">
+    <img src="./diagrams/02-service-account.png" width="75%">
+</p>
+
+## What are Service Accounts?
+
+- **Humans vs Machines**: Kubernetes distinguishes between **User Accounts** (for humans, like administrators or developers) and **Service Accounts** (for machines or applications).
+- **Purpose**: A service account allows an application (like Prometheus for monitoring or Jenkins for deployments) to interact with the **Kubernetes API** to perform tasks such as listing pods or deploying apps.
+- **Authentication**: For an application to query the API, it must be authenticated. This is done using a **token** associated with the service account.
+
+## Working with Pods
+
+- **The Default Account**: Every namespace has a **default service account** created automatically. If you do not specify a service account in your pod definition, Kubernetes assigns this default one.
+- **Automatic Mounting**: Kubernetes automatically mounts the service account token into pods at a specific path: `/var/run/secrets/kubernetes.io/serviceaccount`. This filesystem is only shared between containers in the same Pod.
+
+<p align="center">
+    <img src="./diagrams/02-service-account-volume-mount.png" width="75%">
+</p>
+
+- **Specifying a Custom Account**: In your pod definition file, use the `serviceAccountName` field to assign a specific account.
+- **Disabling Auto-Mount**: If your pod doesn't need to talk to the API, you can stop the token from mounting by setting `automountServiceAccountToken: false` in the pod spec.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  serviceAccountName: build-robot
+  automountServiceAccountToken: false
+```
+
+- **Updating Service Accounts**: You **cannot edit** the service account of an existing pod; it must be deleted and recreated. However, **Deployments** handle this automatically by triggering a new rollout when the pod template is changed.
+
+## Key Security Evolution (v1.22 & v1.24)
+
+<p align="center">
+    <img src="./diagrams/02-service-account-token-v1.22.png" width="75%">
+</p>
+
+The way Kubernetes handles tokens has changed to become more secure:
+
+- **Legacy Tokens (Old Way)**: Previously, tokens were stored as **Secret objects**, had **no expiry date**, and were valid as long as the service account existed.
+
+<p align="center">
+    <img src="./diagrams/02-service-account-tokenrequestapi.png" width="75%">
+</p>
+
+- **Modern Tokens (TokenRequestAPI)**: Since v1.22, Kubernetes uses the `TokenRequestAPI`. These tokens are:
+  - **Time-bound**: They expire (usually after one hour if not specified otherwise).
+  - **Audience-bound**: Targeted for specific uses.
+  - **Project Volumes**: They are mounted into pods as "projected volumes" rather than secret-based volumes.
+- **Recommendation**: You should only manually create permanent service account objects if your application cannot use the `TokenRequestAPI` and you accept the security risks of a non-expiring credential.
+
+<p align="center">
+    <img src="./diagrams/02-service-account-token-v1.24.png" width="75%">
+</p>
+<p align="center">
+    <img src="./diagrams/02-service-account-token-secrets-v1.24.png" width="75%">
+</p>
+<p align="center">
+    <img src="./diagrams/02-service-account-token-v1.24-with-expiry.png" width="75%">
+</p>
+<p align="center">
+    <img src="./diagrams/02-service-account-with-secrets-old-way-v1.24.png" width="75%">
+</p>
+<p align="center">
+    <img src="./diagrams/02-decoded-service-account-token.png" width="75%">
+</p>
+
+| Feature            | Pre v1.22/v1.24            | Post v1.24                        |
+| ------------------ | -------------------------- | --------------------------------- |
+| **Token Creation** | Automatic secret object    | Manual via `kubectl create token` |
+| **Expiry**         | No expiry                  | Time-bound (typically 1 hour)     |
+| **Mount Type**     | Secret Volume              | Projected Volume                  |
+| **Storage**        | Stored in Etcd as a Secret | Generated via API on demand.      |

@@ -212,3 +212,21 @@ kubectl exec ubuntu-sleeper -- whoami # check the user executing the process
 # ResourceQuota
 kubectl create -f ./resource-quota.yaml --namespace=myspace # resource quota is namespace-level object
 ```
+
+# Service Account
+
+```sh
+kubectl create serviceaccount <name>
+kubectl get serviceaccount
+kubectl get sa
+kubectl describe serviceaccount <name> # creates token for application to authenticate with k8s , token is stored in a k8s Secret object
+    kubectl describe secret <secret_name>
+    # curl https://<base_url>/api --header "Authorization: Bearer <token>"
+kubectl describe pod <pod_name>
+    # there will be a default token mounted as a volume to the pod
+    # this token belongs to the default service account of k8s mounted on /var/run/secrets/kubernetes.io/serviceaccount
+    kubectl exec -it <pod_name> -- ls /var/run/secrets/kubernetes.io/serviceaccount
+    # this token is for the pod to authenticate with the kubernetes api
+
+kubectl create token <serviceaccount_name> # Since v1.24, tokens are no longer created automatically with the service account. This command is used to request a time-limited security token for a specific Kubernetes service account, decode the token in jwt.io. This command uses the TokenRequestAPI
+```
