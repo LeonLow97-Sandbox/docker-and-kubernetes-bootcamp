@@ -34,6 +34,15 @@ kubectl get <resource> -o wide             # extra columns (node/IP/etc)
 kubectl get <resource> -o name             # just resource names (great for scripting)
 ```
 
+# Node 
+
+```sh
+kubectl get nodes
+kubectl get no
+
+kubectl label node node01 color=blue    # apply labels to nodes
+```
+
 # Pods
 
 ```sh

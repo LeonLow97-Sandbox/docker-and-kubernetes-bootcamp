@@ -463,3 +463,37 @@ When you apply a taint, you must choose an `effect`, which defines what happens 
 ## Analogy for Understanding
 
 Think of a **Taint** as a **"Special Access Only"** sign on a laboratory door. The **Toleration** is the **Security Badge** held by a scientist. The sign (Taint) keeps everyone out by default, and only the scientist with the right badge (Toleration) is allowed in. However, the sign doesn't force the scientist to stay in that lab; they are still free to go to the common breakroom (an untainted node) if they choose.
+
+# Node Selectors
+
+## Why use Node Selectors?
+
+- **Problem**: By default, Kubernetes Scheduler assigns **any pod to any node**. In a cluster with mixed hardware (e.g., 2 small nodes and 1 large, high-resource node), you might have heavy data-processing workloads that require more "horsepower".
+- **Risk**: Without restrictions, a resource-heavy pod might land on a small node and run out of resources, which is not desired.
+- **Solution**: You can set a **limitation on pods** so they are restricted to running only on specific nodes. **Node Selectors** are the simplest and easiest method to achieve this.
+
+## How to Implement Node Selectors?
+
+Using Node Selectors is a 2-step process involving **labels** and pod **specification**.
+
+- **Step 1: Label the Node**
+  - Kubernetes needs a way to identify which node is which. You do this by assigning `labels` (key-value pairs) to your nodes.
+  - CKAD Command: `kubectl label nodes <node-name> <key>=<value>`
+    - *Example*: `kubectl label nodes node1 size=large`
+
+- **Step 2: Update the Pod Definition**
+  - In Pod's YAML file, you must add a property called `nodeSelector` inside the `spec` section.
+  - You then provide the exact key-value pair that matches the label you gave the node.
+  - *Example*: Setting `nodeSelector` to `size: large` ensures the pod is placed on a node with that specific label.
+
+## Important Constraints and Limitations
+
+<p align="center">
+    <img src="./diagrams/02-node-selectors-limitations.png" width="75%">
+</p>
+
+- **Simple Matching**: Node Selectors only work with a **single label and selector** for a basic match.
+- **Lack of Complexity**: You **cannot** use Node Selectors for complex requirements, such as:
+  - Placing a pod on a "large **OR** medium" node.
+  - Placing a pod on "any node that is **NOT** small".
+- **Advanced Alternative**: For more complex scheduling logic (like "OR" or "NOT" logic), you must use **Node Affinity and Anti-Affinity** features.
