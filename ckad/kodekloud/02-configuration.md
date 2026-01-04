@@ -486,6 +486,11 @@ Using Node Selectors is a 2-step process involving **labels** and pod **specific
   - You then provide the exact key-value pair that matches the label you gave the node.
   - *Example*: Setting `nodeSelector` to `size: large` ensures the pod is placed on a node with that specific label.
 
+```yaml
+  nodeSelector:
+    size: Large
+```
+
 ## Important Constraints and Limitations
 
 <p align="center">
@@ -497,3 +502,58 @@ Using Node Selectors is a 2-step process involving **labels** and pod **specific
   - Placing a pod on a "large **OR** medium" node.
   - Placing a pod on "any node that is **NOT** small".
 - **Advanced Alternative**: For more complex scheduling logic (like "OR" or "NOT" logic), you must use **Node Affinity and Anti-Affinity** features.
+
+# Node Affinity
+
+- **The Upgrade**: Node affinity is essentially an **advanced version of Node Selectors**.
+- **The Purpose**: It ensures that pods are hosted on specific nodes, such as placing a heavy data-processing pod on a high-resource node.
+- **The Advantage**: Unlike node selectors, which are simple, node affinity allows you to use **advanced logic**, such as "OR" or "NOT".
+
+## Using Operators for Better Logic
+
+While node selectors require an exact match, node affinity uses `operator` to give you more control.
+
+- `In`: The pod will be placed on a node if the label matches any value in a provided list (e.g., "Large" or "Medium").
+- `NotIn`: The pod will be placed on nodes that **do not** have a specific label (e.g., "Not Small").
+- `Exists`: This only checks if a label key **exists** on the node at all; it doesn't care what the actual value is.
+
+```yaml
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size     # key-value pairs that matches node with these `labels`
+            operator: In
+            values:
+            - Large
+```
+
+## Understanding the Types (The "long sentences")
+
+Node affinity uses long, descriptive names to define how the scheduler should behave during 2 different stages of a pod's life:
+**Scheduling** (creation) and **Execution** (running).
+
+### Type A: `RequiredDuringSchedulingIgnoredDuringExecution`
+
+- **DuringScheduling**: This is **mandatory**. If the scheduler cannot find a node that matches the affinity rules, the pod **will not be scheduled** at all. Use this when pod placement is crucial for the application to work.
+- **DuringExecution**: If a node's label changes later (e.g., an admin removes the "large" label), the pod will **continue to run** and will not be affected.
+
+### Type B: `PreferredDuringSchedulingIgnoredDuringExecution`
+
+- **DuringScheduling**: This is "best effort". The scheduler will try its best to find a matching node, but if it can't, it will **ignore the rule** and place the pod on any available node. Use this when you have a preference but the workload must run regardless of the node type.
+- **DuringExecution**: Just like the required type, any changes to node labels after the pod is running are **ignored**; the pod stays where it is.
+
+|Feature|Required during Scheduling|Preferred during Scheduling|
+|---|---|---|
+|**Strictness**|Mandatory (Hard rule)|Best effort (Soft rule)|
+|**No Match Found**|Pod is not scheduled|Pod is placed anywhere|
+|**Label Change Later**|Pod continues running|Pod continues running|
+
+## Analogy for Understanding
+
+Think of Node Affinity like booking a hotel room.
+• `RequiredDuringScheduling` is like saying, "I must have a room with a sea view; if you don't have one, I'm not staying at this hotel."
+• `PreferredDuringScheduling` is like saying, "I'd really like a sea view, but if they're all gone, any room will do because I just need a place to sleep."
+• `IgnoredDuringExecution` means that if you are already in your room and the hotel suddenly rebrands that room as a "mountain view," they aren't going to kick you out or move you in the middle of the night.
+

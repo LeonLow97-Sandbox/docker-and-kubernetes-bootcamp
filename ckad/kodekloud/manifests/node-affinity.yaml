@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+  - name: data-processor
+    image: data-processor
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size     # key-value pairs that matches node with these `labels`
+            operator: In
+            values:
+            - Large
+
+# Expressions:
+
+# Only matches labels with size=Large
+# - key: size     
+#   operator: In
+#   values:
+#   - Large
+
+# Matches labels with size= Large OR Medium
+# - key: size     
+#   operator: In
+#   values:
+#   - Large
+#   - Medium
+
+# Matches labels where size IS NOT Small
+# - key: size     
+#   operator: NotIn
+#   values:
+#   - Small
+
+# Matches labels where size exists as a `label`, value does not matter
+# - key: size     
+#   operator: Exists
