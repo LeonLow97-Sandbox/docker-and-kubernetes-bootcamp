@@ -557,3 +557,38 @@ Think of Node Affinity like booking a hotel room.
 • `PreferredDuringScheduling` is like saying, "I'd really like a sea view, but if they're all gone, any room will do because I just need a place to sleep."
 • `IgnoredDuringExecution` means that if you are already in your room and the hotel suddenly rebrands that room as a "mountain view," they aren't going to kick you out or move you in the middle of the night.
 
+# Taints/Tolerations with Node Affinity
+
+## The Problem: Shared Clusters
+
+- In reality, you often share a cluster with other teams.
+- **The Goal**: You want to ensure your specific pods (e.g., "Blue Pods") only run on your specific nodes (e.g., "Blue Nodes"), and that **no other pods** can use your resources.
+
+## Why Taints and Tolerations Aren't Enough
+
+- **Purpose**: Taints are used to repel pods from nodes.
+- **Flaw**: If you taint a "Blue Node" to only accept "Blue Pods", it successfully keeps other pods out.
+- **Risk**: However, it **does not guarantee** that your Blue Pod will actually land on the Blue Node. The Blue Pod might see another node that has **no taints** and decide to land there instead. This is not desired because your pod isn't on its dedicated hardware.
+
+## Why Node Affinity Alone Isn't Enough
+
+- **Purpose**: Node Affinity ensures a pod "prefers" or "requires" a specific node based on labels.
+- **Flaw**: If you set Node Affinity on a Blue Pod to only run on a Blue Node, the pod will go where it is told.
+- **Risk**: However, this **does not stop other pods** from landing on your Blue Node. If those other pods don't have any affinity rules or taints to stop them, they might end up taking the resources on your dedicated node.
+
+## Solution: Combining Both (The CKAD "Golden Rule")
+
+To completely dedicate nodes to specific pods, you must use a **combination** of both techniques.
+
+- **Step 1**: Use **Taints and Tolerations** to prevent "stranger" pods from being placed on your dedicated nodes.
+- **Step 2**: Use **Node Affinity** to prevent your pods from wandering off and being placed on other teams' nodes.
+- **Result**: By using both, you create a "locked-in" relationship where the node only accepts your pod, and your pod only accepts that node.
+
+<p align="center">
+    <img src="./diagrams/02-taints-and-tolerations-and-node-affinity.png" width="75%">
+</p>
+
+## Analogy for Understanding
+
+- Think of a Taint as a **VIP-only lock** on a hotel room door; it keeps the general public out, but the VIP (the pod with the **Toleration**) could still decide to sleep in the lobby (an untainted node) if they wanted.
+- Node Affinity is like a **Strict Booking** that tells the VIP they *must stay* in Room 101. If you use both, the VIP is forced to go to Room 101 (Affinity), and the VIP-only lock (Taint) ensures no one else can sneak into that room while the VIP is out.
