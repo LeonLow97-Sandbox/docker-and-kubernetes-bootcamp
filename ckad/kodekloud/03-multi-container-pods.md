@@ -54,3 +54,53 @@ Think of a **Multi-container Pod** like a professional camera crew:
 - Co-located Containers are like the Camera Operator and the Sound Engineer; they both need to be there for the whole shoot, and it doesn't matter who arrives first.
 - Init Containers are like the Set Designer; they arrive first, build the set (run to completion), and then leave before the actors (the main app) arrive.
 - Sidecar Containers are like the Safety Officer; they arrive before the actors to check the equipment but stay for the entire shoot to make sure everything remains safe until the very end.
+
+# Readiness and Liveness Probes
+
+## Understanding Pod Lifecycle vs Conditions
+
+Before configuring probes, you must understand how Kubernetes views a pod's 'health':
+
+- **Pod Status**: This is a high-level summary of where the pod is in its life (e.g., `Pending`, `ContainerCreating` or `Running`).
+- **Pod Condition**: These are an array of true/false values that provide more detail, such as whether the Pod is `Scheduled`, `Initialized` or `Ready`.
+- **The "Ready" Gap**: By default, Kubernetes assumes a pod is `Ready` as soon as its containers are created. However, many applications (like Jenkins) take time to "warm up" or initialise before they can actually handle traffic.
+
+## Readiness Probes: "Am I Ready for Traffic?"
+
+- **Purpose**: These ensure that a **Servce** does not send traffic to a pod until the applicaiton inside is actually prepared to handle it.
+- **Scenario**: If you add a new pod to a deployment, the service might route traffic to it immediately. Without a readiness probe, users might hit a pod that is still booting up, leading to **service disruption**.
+- **Outcome**: If the probe fails, the pod is **not terminated**, but its "Ready" condition is set to false, and the service stops sending it traffic.
+
+## Liveness Probes: "Am I still Healthy?"
+
+- **Purpose**: These detect if an application is still running but has become **unresponsive** (e.g., stuck in an infinite loop due to a bug).
+- **Auto-Healing**: While Kubernetes automatically restarts crashed containers, it cannot detect an application that is technically "up" but "broken" without a liveness probe.
+- **Outcome**: If a liveness probe fails, Kubernetes considers the container unhealthy, **destroys it**, and **recreates a new one** to restore service.
+
+## How to Configure Probes (CKAD Essentials)
+
+Both probes are configured in the pod definition file under the `spec.containers` section using 3 main methods:
+
+- **HTTP GET**: Checks if a specific API path (e.g., `/ready`) returns a successful response.
+- **TCP Socket**: Checks if a specific port (e.g., 3306 for a database) is open and listening.
+- **Exec Command**: Runs a custom script inside the container; if the script exists with a code of 0, it is successful.
+
+## Key Tuning Options
+
+To avoid "flapping" or unnecessary restarts, you can fine-tune probes with these settings:
+
+- `initialDelaySeconds`: How long to wait before performing the first probe (gives the app time to start).
+- `periodSeconds`: How often to perform the probe (frequency).
+- `failureThreshold`: How many times the probe can fail before Kubernetes takes action (defaults to 3).
+
+## Summary Comparison
+
+| Feature               | Readiness Probe                       | Liveness Probe                    |
+| --------------------- | ------------------------------------- | --------------------------------- |
+| **Primary Goal**      | Controls traffic flow via Services    | Controls container restarts       |
+| **Action on Failure** | Pod is removed from Service endpoints | Container is killed and restarted |
+| **Simple Question**   | "Can I start working yet?"            | "Am I still alive/functional?"    |
+
+## Analogy for Understanding
+
+Think of a **Readiness Probe** like a **"Closed/Open" sign** on a shop door; even if the lights are on (the container is running), customers (traffic) won't enter until the staff is ready. Think of a **Liveness Probe** like a **Health Monitor** on a machine; if the machine stops moving even though the power is on, the monitor triggers a **Hard Reset** to try and fix the jam.

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+  labels:
+    name: simple-webapp
+spec:
+  containers:
+  - name: simple-webapp
+    image: simple-webapp
+    ports:
+      - containerPort: 8080
+    readinessProbe: 
+      httpGet:
+        path: /api/ready
+        port: 8080
+      initialDelaySeconds: 10 # additional delay to probe
+      periodSeconds: 5        # how often to probe
+      failureThreshold: 8     # probe stops after these number of failures
+    livenessProbe:  
+      httpGet:
+        path: /api/healthy
+        port: 8080
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      failureThreshold: 8
