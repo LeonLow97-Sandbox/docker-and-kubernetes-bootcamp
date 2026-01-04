@@ -253,3 +253,17 @@ kubectl taint node <node_name> key=value:NoSchedule- # to remove taint, specify 
 
 kubectl describe node kubemaster | grep Taint  # view taint on Master node
 ```
+
+# Logs and Monitoring
+
+```sh
+kubectl logs <pod>      # View logs for a specific pod with 1 container
+kubectl logs -f <pod>   # Stream logs for a specific pod with 1 container
+
+kubectl logs -f <pod> <container_name> # view logs for a specific pod and container
+
+## Metrics
+kubectl top node        # Shows the CPU and memory consumption of each node in the cluster (e.g., 8% CPU usage or 166 milli-cores)
+kubectl top pod         # Shows the CPU and memory consumption of individual pods.
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml # to deploy latest metrics server to kubernetes cluster
+```

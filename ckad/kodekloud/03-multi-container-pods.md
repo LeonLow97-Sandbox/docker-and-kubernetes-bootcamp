@@ -104,3 +104,31 @@ To avoid "flapping" or unnecessary restarts, you can fine-tune probes with these
 ## Analogy for Understanding
 
 Think of a **Readiness Probe** like a **"Closed/Open" sign** on a shop door; even if the lights are on (the container is running), customers (traffic) won't enter until the staff is ready. Think of a **Liveness Probe** like a **Health Monitor** on a machine; if the machine stops moving even though the power is on, the monitor triggers a **Hard Reset** to try and fix the jam.
+
+# Logging and Monitoring
+
+## Kubernetes Logging Basics
+
+- **Standard Output**: Kubernetes captures logs from applications that stream their events to the **standard output (STDOUT)**.
+- **The Main Command**: You can view these logs using `kubectl logs <pod-name>`.
+- **Live Streaming**: Just like in Docker, you can use the `-f` (follow) flag to see a live trail of the logs as they happen.
+- **Multi-Container Pods**: If a pod has more than one container, the basic command will fail beacuse Kubernetes doesn't know which logs you want. You must **specify the container name** explicitly: `kubectl logs <pod-name> <container-name>`.
+
+## Monitoring Resource Consumption 
+
+- **What to Monitor**: In a cluster, you should track **Node-level metrics** (health, CPU, memory, network and disk utilisation) and **Pod-level metrics** (CPU and memory consumption of individual pods).
+- **The Metrics Server**: Kubernetes does not have a full-featured built-in monitoring tool. Instead, the **Metrics Server** is the standard, "slimmed-down" solution used to aggregated and provide this data.
+- **In-Memory Storage**: The Metrics Server stores data **only in memory**. This means you cannot see historical performance data; for that, you would need advanced third-party solutions like Prometheus or the Elastic Stack.
+
+<p align="center">
+    <img src="./diagrams/03/03-metrics-server.png" width="75%">
+</p>
+
+## How Data is Collected
+
+- **Kubelet and cAdvisor**: On every node, the **Kubelet** agent is running. It contains a subcomponent called **cAdvisor** (Container Advisor), which is repsonsible for retrieving performance metrics from the pods and exposing them.
+- **Aggregation**: The Metrics Server retrieves this information from the Kubelet API across all nodes and stores it for you to query.
+
+<p align="center">
+    <img src="./diagrams/03/03-cAdvisor-kubelet.png" width="75%">
+</p>
