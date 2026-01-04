@@ -9,6 +9,7 @@ kubectl get all --namespace=<namespace> # view all objects in a specific namespa
 kubectl api-resources                   # view all available resource types in the cluster (apiVersion, shortname, kind)
 kubectl logs <pod> -c <container>       # view specific container in a pod with multiple containers
 kubectl logs <pod>                      # view container logs where pod only has 1 container
+kubectl get pods --no-headers | wc -l   # get count of the number pods (exclude headers)
 
 # Imperative Commands
 kubectl create <resource> --help        # view help for creating a specific resource
@@ -57,6 +58,11 @@ kubectl delete pod <pod_name>               # delete the specified Pod
 kubectl delete pod --all                    # delete all Pods in the current namespace
 kubectl get pods -A                         # list Pods in all namespaces
 kubectl get pod <pod> -o yaml > pod.yaml    # get pod yaml
+
+kubectl get pods --selector <key>=<value>   # get pod with label <key>=<value>
+kubectl get all --selector <key>=<value>    # get all objects with label <key>=<value>
+kubectl get pods --selector key1=value1,key2=value2,key3=value3 # get pods with multiple labels
+kubectl get pods --show-labels              # retrieve all pods and show all their labels
 
 # Imperative Commands
 kubectl run <pod_name> --help               # create a Pod using imperative command
