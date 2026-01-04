@@ -125,6 +125,7 @@ kubectl scale --replicas=6 replicaset myapp-replicaset      # scale using impera
 
 ```sh
 kubectl create -f deployment-definition.yaml    # create a deployment
+kubectl apply -f deployment.definition.yaml     # update a deployment
 kubectl get deployment                          # list deployments
 kubectl get deploy                              # list deployments (short name)
 kubectl describe deploy <deployment_name>       # describe deployment details
@@ -133,6 +134,14 @@ kubectl describe deploy <deployment_name>       # describe deployment details
 kubectl create deployment my-dep --image=nginx --replicas=3 # create deployment using imperative command
 kubectl create deploy nginx --image=nginx --dry-run=client -o yaml > nginx-deploy.yaml # generate deployment YAML without creating it
 kubectl scale deployment my-dep --replicas=5                # scale deployment using imperative command
+kubectl set image deployment/<deployment-name> \            # update image of a deployment
+    nginx=nginx:1.9.1
+
+# Rollout commands
+kubectl rollout status deployment/<deployment-name>     # view the status of the rollout deployment
+kubectl rollout history deployment/<deployment-name>    # view revisions of rollout deployment
+    kubectl rollout history deployment/<deployment-name> --revision=1 # view status of a specific revision
+kubectl rollout undo deployment/<deployment-name>       # undo a deployment and rollback to previous replicaset version
 ```
 
 # Namespace
