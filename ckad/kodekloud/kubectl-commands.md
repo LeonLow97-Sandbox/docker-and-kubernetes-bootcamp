@@ -7,6 +7,8 @@ kubectl get all                         # view all objects in the current namesp
 kubectl get all -A                      # view all objects in all namespaces
 kubectl get all --namespace=<namespace> # view all objects in a specific namespace
 kubectl api-resources                   # view all available resource types in the cluster (apiVersion, shortname, kind)
+kubectl logs <pod> -c <container>       # view specific container in a pod with multiple containers
+kubectl logs <pod>                      # view container logs where pod only has 1 container
 
 # Imperative Commands
 kubectl create <resource> --help        # view help for creating a specific resource
@@ -46,14 +48,15 @@ kubectl label node node01 color=blue    # apply labels to nodes
 # Pods
 
 ```sh
-kubectl create -f pod-definition.yaml   # create a Pod using the definition file
-kubectl get pods                        # list Pods in the current namespace
-kubectl get pod <pod_name> -o yaml      # get Pod definition in YAML format
+kubectl create -f pod-definition.yaml       # create a Pod using the definition file
+kubectl get pods                            # list Pods in the current namespace
+kubectl get pod <pod_name> -o yaml          # get Pod definition in YAML format
 kubectl get pods --watch
-kubectl describe pod <pod_name>         # show detailed information about all Pods (status, labels, image, events, containers)
-kubectl delete pod <pod_name>           # delete the specified Pod
-kubectl delete pod --all                # delete all Pods in the current namespace
-kubectl get pods -A                     # list Pods in all namespaces
+kubectl describe pod <pod_name>             # show detailed information about all Pods (status, labels, image, events, containers)
+kubectl delete pod <pod_name>               # delete the specified Pod
+kubectl delete pod --all                    # delete all Pods in the current namespace
+kubectl get pods -A                         # list Pods in all namespaces
+kubectl get pod <pod> -o yaml > pod.yaml    # get pod yaml
 
 # Imperative Commands
 kubectl run <pod_name> --help               # create a Pod using imperative command

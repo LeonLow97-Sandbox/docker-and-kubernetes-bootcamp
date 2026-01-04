@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+  labels:
+    name: simple-webapp
+spec:
+  containers:       # Multi-Containers in a Pod
+  - name: web-app   # container 1
+    image: web-app
+    ports:
+      - containerPort: 8080
+  - name: main-app  # container 2 (Design Pattern 1: co-located containers)
+    image: main-app
+
+  initContainers:   # Design Pattern 2: Regular Init Containers
+  - name: db-checker
+    image: busybox
+    command: 'wait-for-db-to-start.sh'
+  - name: api-checker
+    image: busybox
+    command: 'wait-for-another-api.sh'
+    restartPolicy: Always # Design Pattern 3: Sidecar Containers
