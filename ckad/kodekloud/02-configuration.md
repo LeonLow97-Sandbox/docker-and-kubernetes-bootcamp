@@ -1,3 +1,76 @@
+- [Docker Images](#docker-images)
+  - [Why create your Own Image?](#why-create-your-own-image)
+  - [The Dockerfile Basics](#the-dockerfile-basics)
+  - [The Layered Architecture](#the-layered-architecture)
+  - [Container Lifecycle](#container-lifecycle)
+  - [Commands vs Entry Points](#commands-vs-entry-points)
+- [Docker Commands, Entrypoints and Arguments](#docker-commands-entrypoints-and-arguments)
+  - [The Purpose of a Container](#the-purpose-of-a-container)
+  - [The `CMD` Instruction](#the-cmd-instruction)
+  - [The `ENTRYPOINT` Instruction](#the-entrypoint-instruction)
+  - [Combining `ENTRYPOINT` and `CMD`](#combining-entrypoint-and-cmd)
+  - [Syntax requirements](#syntax-requirements)
+- [Kubernetes Pod Commands and Arguments](#kubernetes-pod-commands-and-arguments)
+  - [Translating Docker to Kubernetes](#translating-docker-to-kubernetes)
+  - [Using the `args` field](#using-the-args-field)
+  - [Using the `command` field](#using-the-command-field)
+  - [Summary for CKAD Prep](#summary-for-ckad-prep)
+- [CheatSheet for Commands and Arguments](#cheatsheet-for-commands-and-arguments)
+  - [Docker](#docker)
+  - [Kubernetes](#kubernetes)
+- [ConfigMap](#configmap)
+  - [Core Concepts](#core-concepts)
+  - [Step 1: Creating ConfigMaps](#step-1-creating-configmaps)
+  - [Step 2: Injecting into Pods](#step-2-injecting-into-pods)
+  - [Analogy for Understanding](#analogy-for-understanding)
+- [Secret](#secret)
+  - [Core Concepts](#core-concepts-1)
+  - [Step 1: Creating Secrets](#step-1-creating-secrets)
+  - [Step 2: Injecting Secrets into Pods](#step-2-injecting-secrets-into-pods)
+  - [Security Best Practices](#security-best-practices)
+- [Docker Security and Process Isolation](#docker-security-and-process-isolation)
+  - [Process Isolation via Namespaces](#process-isolation-via-namespaces)
+  - [User Security and Root Access](#user-security-and-root-access)
+  - [Linux Capabilities](#linux-capabilities)
+  - [Analogy for Understanding](#analogy-for-understanding-1)
+- [Kubernetes Security Contexts: Managing Permissions](#kubernetes-security-contexts-managing-permissions)
+  - [Core Concepts](#core-concepts-2)
+  - [Key Security Settings](#key-security-settings)
+  - [Analogy for Understanding](#analogy-for-understanding-2)
+- [Resource Requirements](#resource-requirements)
+  - [Resource Requests (Minimum Guarantee)](#resource-requests-minimum-guarantee)
+  - [Resource Limits (Maximum Cap)](#resource-limits-maximum-cap)
+  - [Configuration Scenarios](#configuration-scenarios)
+  - [Administrative Controls (Namespace Level)](#administrative-controls-namespace-level)
+  - [Analogy for Understanding](#analogy-for-understanding-3)
+- [Service Account](#service-account)
+  - [What are Service Accounts?](#what-are-service-accounts)
+  - [Working with Pods](#working-with-pods)
+  - [Key Security Evolution (v1.22 \& v1.24)](#key-security-evolution-v122--v124)
+- [Taints and Tolerations](#taints-and-tolerations)
+  - [How It Works (Analogy)](#how-it-works-analogy)
+  - [Taint Effects](#taint-effects)
+  - [Configuring Taints and Tolerations](#configuring-taints-and-tolerations)
+  - [CKAD Tips](#ckad-tips)
+  - [Analogy for Understanding](#analogy-for-understanding-4)
+- [Node Selectors](#node-selectors)
+  - [Why use Node Selectors?](#why-use-node-selectors)
+  - [How to Implement Node Selectors?](#how-to-implement-node-selectors)
+  - [Important Constraints and Limitations](#important-constraints-and-limitations)
+- [Node Affinity](#node-affinity)
+  - [Using Operators for Better Logic](#using-operators-for-better-logic)
+  - [Understanding the Types (The "long sentences")](#understanding-the-types-the-long-sentences)
+    - [Type A: `RequiredDuringSchedulingIgnoredDuringExecution`](#type-a-requiredduringschedulingignoredduringexecution)
+    - [Type B: `PreferredDuringSchedulingIgnoredDuringExecution`](#type-b-preferredduringschedulingignoredduringexecution)
+  - [Analogy for Understanding](#analogy-for-understanding-5)
+- [Taints/Tolerations with Node Affinity](#taintstolerations-with-node-affinity)
+  - [The Problem: Shared Clusters](#the-problem-shared-clusters)
+  - [Why Taints and Tolerations Aren't Enough](#why-taints-and-tolerations-arent-enough)
+  - [Why Node Affinity Alone Isn't Enough](#why-node-affinity-alone-isnt-enough)
+  - [Solution: Combining Both (The CKAD "Golden Rule")](#solution-combining-both-the-ckad-golden-rule)
+  - [Analogy for Understanding](#analogy-for-understanding-6)
+
+
 # Docker Images
 
 ## Why create your Own Image?
@@ -123,7 +196,7 @@ CMD [ "5" ]
 # ConfigMap
 
 <p align="center">
-    <img src="./diagrams/02-env-value-types.png" width="50%">
+    <img src="./diagrams/02/02-env-value-types.png" width="50%">
 </p>
 
 ConfigMaps are a vital tool in Kubernetes for **decoupling configuration data from application code**, making it much easier to manage settings across multiple environments.
@@ -200,7 +273,7 @@ Once a Secret exists in the cluster, you can provide it to your application in m
 - **Volume Mounts**: You can mount a Secret as a **volume**. In this case, Kubernetes creates a directory where **each key in the Secret becomes a file**, and the content of that file is the secret value.
 
 <p align="center">
-    <img src="./diagrams/02-secrets-in-pods-as-volumes.png" width="50%">
+    <img src="./diagrams/02/02-secrets-in-pods-as-volumes.png" width="50%">
 </p>
 
 ## Security Best Practices
@@ -219,7 +292,7 @@ Understanding how Docker handles security and isolation on a single host.
 ## Process Isolation via Namespaces
 
 <p align="center">
-    <img src="./diagrams/02-docker-namespaces.png" width="50%">
+    <img src="./diagrams/02/02-docker-namespaces.png" width="50%">
 </p>
 
 - **Shared Kernel**: Unlike virtual machines, containers are **not completely isolated** from their host; they share the same underlying operating system kernel.
@@ -235,7 +308,7 @@ Understanding how Docker handles security and isolation on a single host.
 ## Linux Capabilities
 
 <p align="center">
-    <img src="./diagrams/02-linux-capabilities.png" width="50%">
+    <img src="./diagrams/02/02-linux-capabilities.png" width="50%">
 </p>
 
 - **Fine-Grained Control**: Instead of giving the root user full power, Docker uses **Linux capabiliites** to limit their abilities.
@@ -272,10 +345,10 @@ Think of the **Pod-level Security Context** as the **"House Rules"** for an apar
 ## Resource Requests (Minimum Guarantee)
 
 <p align="center">
-    <img src="./diagrams/02-assign-pods-to-nodes.png" width="50%">
+    <img src="./diagrams/02/02-assign-pods-to-nodes.png" width="50%">
 </p>
 <p align="center">
-    <img src="./diagrams/02-assign-pods-to-new-nodes.png" width="50%">
+    <img src="./diagrams/02/02-assign-pods-to-new-nodes.png" width="50%">
 </p>
 
 - A **request** is the minimum amount of CPU or memory a container is guaranteed to have.
@@ -288,10 +361,10 @@ Think of the **Pod-level Security Context** as the **"House Rules"** for an apar
 ## Resource Limits (Maximum Cap)
 
 <p align="center">
-    <img src="./diagrams/02-resource-limits.png" width="50%">
+    <img src="./diagrams/02/02-resource-limits.png" width="50%">
 </p>
 <p align="center">
-    <img src="./diagrams/02-insufficient-cpu.png" width="50%">
+    <img src="./diagrams/02/02-insufficient-cpu.png" width="50%">
 </p>
 
 - A **limit** is the absolute maximum amount of resources a container can consume.
@@ -299,16 +372,16 @@ Think of the **Pod-level Security Context** as the **"House Rules"** for an apar
 - **Memory Termination (OOM)**: Memory works differently. If a pod constantly tries to exceed its memory limit, it will be terminated with an **Out of Memory Killed (OOMKilled) error**. This is because, unlike CPU, memory cannot be "slowed down"; if it's gone, the pod must be killed to free up space.
 
 <p align="center">
-    <img src="./diagrams/02-mem-exceeds-limit.png" width="50%">
+    <img src="./diagrams/02/02-mem-exceeds-limit.png" width="50%">
 </p>
 
 ## Configuration Scenarios
 
 <p align="center">
-    <img src="./diagrams/02-cpu-request-and-limit.png" width="50%">
+    <img src="./diagrams/02/02-cpu-request-and-limit.png" width="50%">
 </p>
 <p align="center">
-    <img src="./diagrams/02-mem-request-and-limit.png" width="50%">
+    <img src="./diagrams/02/02-mem-request-and-limit.png" width="50%">
 </p>
 
 - **No Requests, No Limits**
@@ -332,10 +405,10 @@ Think of the **Pod-level Security Context** as the **"House Rules"** for an apar
 ## Administrative Controls (Namespace Level)
 
 - `LimitRange`: You can set **default** requests and limits for a specific namespace. If a user creates a pod without defining resources, the `LimitRange` automatically applies these defaults. It also sets "min" and "max" boundaries for what a user is allowed to request.
-- `ResourceQuota`: This acts as a **total budget** for a namespace. It limits the *sum* of all requests and limits across **all pods** in that **namespace** (e.g., "this department can only use 10 CPUs total").
+- `ResourceQuota`: This acts as a **total budget** for a namespace. It limits the _sum_ of all requests and limits across **all pods** in that **namespace** (e.g., "this department can only use 10 CPUs total").
 
 <p align="center">
-    <img src="./diagrams/02-resource-quota.png" width="75%">
+    <img src="./diagrams/02/02-resource-quota.png" width="75%">
 </p>
 
 ## Analogy for Understanding
@@ -345,7 +418,7 @@ Think of a **Resource Request** as a **hotel reservation**; the hotel (the node)
 # Service Account
 
 <p align="center">
-    <img src="./diagrams/02-service-account.png" width="75%">
+    <img src="./diagrams/02/02-service-account.png" width="75%">
 </p>
 
 ## What are Service Accounts?
@@ -360,7 +433,7 @@ Think of a **Resource Request** as a **hotel reservation**; the hotel (the node)
 - **Automatic Mounting**: Kubernetes automatically mounts the service account token into pods at a specific path: `/var/run/secrets/kubernetes.io/serviceaccount`. This filesystem is only shared between containers in the same Pod.
 
 <p align="center">
-    <img src="./diagrams/02-service-account-volume-mount.png" width="75%">
+    <img src="./diagrams/02/02-service-account-volume-mount.png" width="75%">
 </p>
 
 - **Specifying a Custom Account**: In your pod definition file, use the `serviceAccountName` field to assign a specific account.
@@ -381,7 +454,7 @@ spec:
 ## Key Security Evolution (v1.22 & v1.24)
 
 <p align="center">
-    <img src="./diagrams/02-service-account-token-v1.22.png" width="75%">
+    <img src="./diagrams/02/02-service-account-token-v1.22.png" width="75%">
 </p>
 
 The way Kubernetes handles tokens has changed to become more secure:
@@ -389,7 +462,7 @@ The way Kubernetes handles tokens has changed to become more secure:
 - **Legacy Tokens (Old Way)**: Previously, tokens were stored as **Secret objects**, had **no expiry date**, and were valid as long as the service account existed.
 
 <p align="center">
-    <img src="./diagrams/02-service-account-tokenrequestapi.png" width="75%">
+    <img src="./diagrams/02/02-service-account-tokenrequestapi.png" width="75%">
 </p>
 
 - **Modern Tokens (TokenRequestAPI)**: Since v1.22, Kubernetes uses the `TokenRequestAPI`. These tokens are:
@@ -399,19 +472,19 @@ The way Kubernetes handles tokens has changed to become more secure:
 - **Recommendation**: You should only manually create permanent service account objects if your application cannot use the `TokenRequestAPI` and you accept the security risks of a non-expiring credential.
 
 <p align="center">
-    <img src="./diagrams/02-service-account-token-v1.24.png" width="75%">
+    <img src="./diagrams/02/02-service-account-token-v1.24.png" width="75%">
 </p>
 <p align="center">
-    <img src="./diagrams/02-service-account-token-secrets-v1.24.png" width="75%">
+    <img src="./diagrams/02/02-service-account-token-secrets-v1.24.png" width="75%">
 </p>
 <p align="center">
-    <img src="./diagrams/02-service-account-token-v1.24-with-expiry.png" width="75%">
+    <img src="./diagrams/02/02-service-account-token-v1.24-with-expiry.png" width="75%">
 </p>
 <p align="center">
-    <img src="./diagrams/02-service-account-with-secrets-old-way-v1.24.png" width="75%">
+    <img src="./diagrams/02/02-service-account-with-secrets-old-way-v1.24.png" width="75%">
 </p>
 <p align="center">
-    <img src="./diagrams/02-decoded-service-account-token.png" width="75%">
+    <img src="./diagrams/02/02-decoded-service-account-token.png" width="75%">
 </p>
 
 | Feature            | Pre v1.22/v1.24            | Post v1.24                        |
@@ -457,7 +530,7 @@ When you apply a taint, you must choose an `effect`, which defines what happens 
 - **Node Affinity**: If you need to **force** a pod to a specific node, you must use **Node Affinity** instead of (or in addition to) taints and tolerations.
 
 <p align="center">
-    <img src="./diagrams/02-taints-and-tolerations.png" width="75%">
+    <img src="./diagrams/02/02-taints-and-tolerations.png" width="75%">
 </p>
 
 ## Analogy for Understanding
@@ -477,24 +550,25 @@ Think of a **Taint** as a **"Special Access Only"** sign on a laboratory door. T
 Using Node Selectors is a 2-step process involving **labels** and pod **specification**.
 
 - **Step 1: Label the Node**
+
   - Kubernetes needs a way to identify which node is which. You do this by assigning `labels` (key-value pairs) to your nodes.
   - CKAD Command: `kubectl label nodes <node-name> <key>=<value>`
-    - *Example*: `kubectl label nodes node1 size=large`
+    - _Example_: `kubectl label nodes node1 size=large`
 
 - **Step 2: Update the Pod Definition**
   - In Pod's YAML file, you must add a property called `nodeSelector` inside the `spec` section.
   - You then provide the exact key-value pair that matches the label you gave the node.
-  - *Example*: Setting `nodeSelector` to `size: large` ensures the pod is placed on a node with that specific label.
+  - _Example_: Setting `nodeSelector` to `size: large` ensures the pod is placed on a node with that specific label.
 
 ```yaml
-  nodeSelector:
-    size: Large
+nodeSelector:
+  size: Large
 ```
 
 ## Important Constraints and Limitations
 
 <p align="center">
-    <img src="./diagrams/02-node-selectors-limitations.png" width="75%">
+    <img src="./diagrams/02/02-node-selectors-limitations.png" width="75%">
 </p>
 
 - **Simple Matching**: Node Selectors only work with a **single label and selector** for a basic match.
@@ -518,15 +592,15 @@ While node selectors require an exact match, node affinity uses `operator` to gi
 - `Exists`: This only checks if a label key **exists** on the node at all; it doesn't care what the actual value is.
 
 ```yaml
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
         - matchExpressions:
-          - key: size     # key-value pairs that matches node with these `labels`
-            operator: In
-            values:
-            - Large
+            - key: size # key-value pairs that matches node with these `labels`
+              operator: In
+              values:
+                - Large
 ```
 
 ## Understanding the Types (The "long sentences")
@@ -544,11 +618,11 @@ Node affinity uses long, descriptive names to define how the scheduler should be
 - **DuringScheduling**: This is "best effort". The scheduler will try its best to find a matching node, but if it can't, it will **ignore the rule** and place the pod on any available node. Use this when you have a preference but the workload must run regardless of the node type.
 - **DuringExecution**: Just like the required type, any changes to node labels after the pod is running are **ignored**; the pod stays where it is.
 
-|Feature|Required during Scheduling|Preferred during Scheduling|
-|---|---|---|
-|**Strictness**|Mandatory (Hard rule)|Best effort (Soft rule)|
-|**No Match Found**|Pod is not scheduled|Pod is placed anywhere|
-|**Label Change Later**|Pod continues running|Pod continues running|
+| Feature                | Required during Scheduling | Preferred during Scheduling |
+| ---------------------- | -------------------------- | --------------------------- |
+| **Strictness**         | Mandatory (Hard rule)      | Best effort (Soft rule)     |
+| **No Match Found**     | Pod is not scheduled       | Pod is placed anywhere      |
+| **Label Change Later** | Pod continues running      | Pod continues running       |
 
 ## Analogy for Understanding
 
@@ -585,10 +659,10 @@ To completely dedicate nodes to specific pods, you must use a **combination** of
 - **Result**: By using both, you create a "locked-in" relationship where the node only accepts your pod, and your pod only accepts that node.
 
 <p align="center">
-    <img src="./diagrams/02-taints-and-tolerations-and-node-affinity.png" width="75%">
+    <img src="./diagrams/02/02-taints-and-tolerations-and-node-affinity.png" width="75%">
 </p>
 
 ## Analogy for Understanding
 
 - Think of a Taint as a **VIP-only lock** on a hotel room door; it keeps the general public out, but the VIP (the pod with the **Toleration**) could still decide to sleep in the lobby (an untainted node) if they wanted.
-- Node Affinity is like a **Strict Booking** that tells the VIP they *must stay* in Room 101. If you use both, the VIP is forced to go to Room 101 (Affinity), and the VIP-only lock (Taint) ensures no one else can sneak into that room while the VIP is out.
+- Node Affinity is like a **Strict Booking** that tells the VIP they _must stay_ in Room 101. If you use both, the VIP is forced to go to Room 101 (Affinity), and the VIP-only lock (Taint) ensures no one else can sneak into that room while the VIP is out.

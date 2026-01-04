@@ -45,7 +45,7 @@
 ## Nodes and Clusters
 
 <p align="center">
-    <img src="./diagrams/01-k8s-cluster.png" width="50%">
+    <img src="./diagrams/01/01-k8s-cluster.png" width="50%">
 </p>
 
 - **Nodes**: A node is the basic unit of a Kubernetes cluster; it is a physical or virtual machine where Kubernetes is installed. These are the **worker machines** where your containers are actually launched and run.
@@ -55,7 +55,7 @@
 ## The Master Node: The Control Plane
 
 <p align="center">
-    <img src="./diagrams/01-master-worker.png" width="50%">
+    <img src="./diagrams/01/01-master-worker.png" width="50%">
 </p>
 
 - **Role of the Master**: The master is a specific node that **watches over the worker nodes** and is responsible for the orchestration of containers.
@@ -167,7 +167,7 @@ kubectl get pods
 ## Kubernetes Controllers: The "Brain" of the Cluster
 
 <p align="center">
-    <img src="./diagrams/01-replication-controller-span-nodes.png" width="50%">
+    <img src="./diagrams/01/01-replication-controller-span-nodes.png" width="50%">
 </p>
 
 - **Definition**: Controllers are the **processes that monitor Kubernetes objects** and respond accordingly to ensure the system is running as desired.
@@ -191,7 +191,7 @@ A ReplicaSet definition file has 4 main sections:
 ## Labels and Selectors
 
 <p align="center">
-    <img src="./diagrams/01-labels-and-selectors.png" width="50%">
+    <img src="./diagrams/01/01-labels-and-selectors.png" width="50%">
 </p>
 
 - **Filtering**: Because a cluster might run hundreds of pods, **Labels** (key-value pairs) act as tags.
@@ -211,7 +211,7 @@ Think of a **Replica Set** like a **Thermostat**. You set the "desired temperatu
 # Deployment
 
 <p align="center">
-    <img src="./diagrams/01-deployment.png" width="50%">
+    <img src="./diagrams/01/01-deployment.png" width="50%">
 </p>
 
 - **A Higher-Level Object**: A Deployment is a Kubernetes object that sits **higher in the hierarchy** than pods or replica sets. While pods run single instances and replica sets ensure multiple instances stay running, deployments manage the **entire lifecycle** of those instances.
@@ -265,7 +265,7 @@ Think of **Namespaces** like **operating different departments** within the same
 ## What is a Kubernetes Service?
 
 <p align="center">
-    <img src="./diagrams/01-service-to-pod.png" width="50%">
+    <img src="./diagrams/01/01-service-to-pod.png" width="50%">
 </p>
 
 - **The Connector**: Services enable communication between various components within and outside of your application. They help connect different groups of pods, such as front-end tier connecting to a back-end process.
@@ -273,13 +273,13 @@ Think of **Namespaces** like **operating different departments** within the same
 - **Stable Networking**: Because pods are ephemeral (they can go down and be replaced with new IP addresses), you cannot rely on pod IPs for communication. A service provides a **single, stable interface** (IP and name) to access a group of pods.
 
 <p align="center">
-    <img src="./diagrams/01-service-types.png" width="50%">
+    <img src="./diagrams/01/01-service-types.png" width="50%">
 </p>
 
 ## NodePort Service (External Access)
 
 <p align="center">
-    <img src="./diagrams/01-nodeport.png" width="50%">
+    <img src="./diagrams/01/01-nodeport.png" width="50%">
 </p>
 
 - **Purpose**: This service type makes an internal pod accessible to users outside the cluster by listening to a port on the physical or virtual **Node**.
@@ -292,7 +292,7 @@ Think of **Namespaces** like **operating different departments** within the same
 ## ClusterIP Service (Internal Access)
 
 <p align="center">
-    <img src="./diagrams/01-service-clusterip.png" width="50%">
+    <img src="./diagrams/01/01-service-clusterip.png" width="50%">
 </p>
 
 - **Purpose**: This is the **default service type**. It creates a virtual IP inside the cluster to enable communication between different internal services, such as a front-end server talking to a back-end database.
@@ -308,7 +308,7 @@ Think of **Namespaces** like **operating different departments** within the same
 ## Load Balancing & Multi-Node Support
 
 <p align="center">
-    <img src="./diagrams/01-service-multi-node.png" width="50%">
+    <img src="./diagrams/01/01-service-multi-node.png" width="50%">
 </p>
 
 - **Random Distribution**: If a service manages multiple pods, it acts as a built-in load balancer. It typically uses a **random algorithm** to distribute incoming requests across all healthy pods.
