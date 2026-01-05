@@ -4,6 +4,16 @@
   - [Connecting Objects Internally](#connecting-objects-internally)
   - [Annotations: For information, Not Selection](#annotations-for-information-not-selection)
   - [Summary](#summary)
+- [Kubernetes Deployment Strategies](#kubernetes-deployment-strategies)
+  - [1. RollingUpdte vs Recreate](#1-rollingupdte-vs-recreate)
+    - [Rollouts and Revisions](#rollouts-and-revisions)
+    - [Deployment Strategies](#deployment-strategies)
+  - [Updating and Rolling back](#updating-and-rolling-back)
+  - [Understanding Max Unavailable and Max Surge](#understanding-max-unavailable-and-max-surge)
+  - [2. Blue-Green Deployment Strategy](#2-blue-green-deployment-strategy)
+  - [3. Canary Deployment Strategy](#3-canary-deployment-strategy)
+    - [Native Implementation Steps](#native-implementation-steps)
+    - [Managing Traffic Split](#managing-traffic-split)
 
 # Labels, Selectors and Annotations
 
@@ -93,14 +103,14 @@ spec:
 There are 2 primary ways Kubernetes handles updates, and knowing the difference is vital for the exam:
 
 - **Recreate Strategy**:
-    - All old pods are **destroyed first**, and then the new versions are created.
-    - This results in **application downtime** because there is a period where no pods are running.
-    - In the event logs, you will see the old ReplicaSet scale to zero before the new one scales up.
+  - All old pods are **destroyed first**, and then the new versions are created.
+  - This results in **application downtime** because there is a period where no pods are running.
+  - In the event logs, you will see the old ReplicaSet scale to zero before the new one scales up.
 - **RollingUpdate Strategy (The Default)**:
-    - This is the **standard behaviour** if you do not specify a strategy. 
-    - It takes down old pods and brings up new ones **one by one**.
-    - This ensures the application stays online and provides a **seamless upgrade** for users.
-    - Under the hood, it scales down the old ReplicaSet while simultaneously scaling up a new one.
+  - This is the **standard behaviour** if you do not specify a strategy.
+  - It takes down old pods and brings up new ones **one by one**.
+  - This ensures the application stays online and provides a **seamless upgrade** for users.
+  - Under the hood, it scales down the old ReplicaSet while simultaneously scaling up a new one.
 
 <p align="center">
     <img src="./diagrams/04/04-deployment-rollingupdate.png" width="75%">
@@ -114,7 +124,7 @@ There are 2 primary ways Kubernetes handles updates, and knowing the difference 
 - **Applying Changes**: The preferred way to update is to modify your YAML configuration file and use `kubectl apply`.
 - **Imperative Updates**: You can also use `kubectl set image` to quickly change a container version, though this can make your local YAML files outdated.
 - **Undo/Rollback**: If a new version is buggy, you can use `kubectl rollout undo` to revert to the previous revision.
-- **Recovery**: During a rolback, Kubernetes destroys the pods in the new ReplicaSet and birngs the old ones back up gradually.
+- **Recovery**: During a rollback, Kubernetes destroys the pods in the new ReplicaSet and brings the old ones back up gradually.
 
 <p align="center">
     <img src="./diagrams/04/04-deployment-rollback.png" width="75%">
@@ -126,3 +136,41 @@ These 2 settings allow you to fine-tune the `RollingUpdate` strategy to balance 
 
 - **Max Unavailable (e.g., 25%)**: This defines the maximum number of pods that can be "down" during an update. If you have 4 replicas and set this to 25%, Kubernetes ensures that at least 3 pods are always running and available to serve traffic.
 - **Max Surge (e.g., 25%)**: This defines how many extra pods Kubernetes can create above your desired number during the update. If you have 4 replicas and set this to 25%, Kubernetes can briefly run up to 5 pods (the 4 original plus 1 new version) while it transitions between versions.
+
+## 2. Blue-Green Deployment Strategy
+
+<p align="center">
+    <img src="./diagrams/04/04-blue-green-deployment.png" width="75%">
+</p>
+
+- **The Concept**: You have 2 identical environments: **Blue** (the old version) and **Green** (the new version). Both versions are deployed simultaneously.
+- **Traffic Management**: Initially, **100% of user traffic** is routed to the Blue version while you perform tests on the Green version. Once you are confident the new version is stable, you **switch all traffic to green** at once.
+- **Implementation in Kubernetes**: While often managed by service meshes like Istio, you can implement this natively using **Deployments and Services**
+  - **Step 1**: Create a deployment for the current version (Blue) with a specific label, such as `version: v1`.
+  - **Step 2**: Create a **Service** with a `selector` that matches that label (`version: v1`) to route traffic to the Blue pods.
+  - **Step 3**: Deploy the new version (Green) as a **separate deployment** with a new label, such as `version: v2`.
+  - **Step 4**: After testing, update the **Service's label selector** to `version: v2`. The Service will immediately stop sending traffic to Blue and start sending it to Green.
+
+## 3. Canary Deployment Strategy
+
+<p align="center">
+    <img src="./diagrams/04/04-canary-deployment.png" width="75%">
+</p>
+
+- **Definition**: A strategy where you deploy a new version of your application alongside the old one, but only route a **small percentage of traffic** to the new version.
+- **The Goal**: This allows you to run tests in a production-live environment with real traffic. If new version performs well, you upgrade the rest of the environment; if it fails, you only impact a small subset of users.
+
+### Native Implementation Steps
+
+To implement this without advanced tools (like a service mesh), you use 2 **Deployments** and 1 **Service**:
+
+1. **The Primary Deployment**: This is your current stable version (e.g., version V1). It typically runs multiple pods to handle the bulk of your traffic.
+2. **The Canary Deployment**: You create a second, separate deployment using the **new container image** (e.g., version V2).
+3. **The Common Label**: To ensure a single Service can send traffic to both deployments at once, you must give the pods in **both deployments a common label** (for example, `app: front-end`).
+4. **The Service Selector**: You configure your Service's `selector` to match that **common label**. The Service will now automatically discover and route traffic to all pods that carry that label, regardless of which deployment they belong to.
+
+### Managing Traffic Split
+
+- **Equal Distribution**: By default, a Kubernetes Service distributes traffic **equally across all available pods**.
+- **Manual Weighting**: Because traffic is split per pod, you control the percentage of traffic by adjusting the **replica count**. For example, if your Primary deployment has 5 pods and your Canary deployment has 1 pod, the Canary pod will receive approximately 1/6 = 17% of the total traffic (1 out of 6 pods).
+- **Native Limitation**: Native Kubernetes has limited control over exact traffic percentages. You cannot easily route exactly 1% of traffic unless you have at least 100 pods in total. For granular control (e.g., 1% vs 99% split with only 2 pods), you would need a service mesh like **Istio**.
