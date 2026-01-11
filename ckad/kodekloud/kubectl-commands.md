@@ -282,3 +282,14 @@ kubectl top node        # Shows the CPU and memory consumption of each node in t
 kubectl top pod         # Shows the CPU and memory consumption of individual pods.
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml # to deploy latest metrics server to kubernetes cluster
 ```
+
+# Job and CronJob
+
+```sh
+kubectl get jobs
+kubectl delete job <job-name>
+kubectl create job <job-name> --image=<image-name> --dry-run=client -o yaml > job.yaml
+
+kubectl get cronjobs
+kubectl create cronjob <cronjob-name> --image <image-name> --schedule="30 21 * * *" --dry-run=client -o yaml > cronjob.yaml
+```

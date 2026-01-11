@@ -5,7 +5,7 @@
   - [Annotations: For information, Not Selection](#annotations-for-information-not-selection)
   - [Summary](#summary)
 - [Kubernetes Deployment Strategies](#kubernetes-deployment-strategies)
-  - [1. RollingUpdte vs Recreate](#1-rollingupdte-vs-recreate)
+  - [1. RollingUpdate vs Recreate](#1-rollingupdate-vs-recreate)
     - [Rollouts and Revisions](#rollouts-and-revisions)
     - [Deployment Strategies](#deployment-strategies)
   - [Updating and Rolling back](#updating-and-rolling-back)
@@ -14,6 +14,9 @@
   - [3. Canary Deployment Strategy](#3-canary-deployment-strategy)
     - [Native Implementation Steps](#native-implementation-steps)
     - [Managing Traffic Split](#managing-traffic-split)
+- [Jobs and Cron Jobs](#jobs-and-cron-jobs)
+  - [Jobs](#jobs)
+  - [CronJobs](#cronjobs)
 
 # Labels, Selectors and Annotations
 
@@ -85,7 +88,7 @@ spec:
 
 # Kubernetes Deployment Strategies
 
-## 1. RollingUpdte vs Recreate
+## 1. RollingUpdate vs Recreate
 
 <p align="center">
     <img src="./diagrams/04/04-deployment-strategy.png" width="75%">
@@ -174,3 +177,57 @@ To implement this without advanced tools (like a service mesh), you use 2 **Depl
 - **Equal Distribution**: By default, a Kubernetes Service distributes traffic **equally across all available pods**.
 - **Manual Weighting**: Because traffic is split per pod, you control the percentage of traffic by adjusting the **replica count**. For example, if your Primary deployment has 5 pods and your Canary deployment has 1 pod, the Canary pod will receive approximately 1/6 = 17% of the total traffic (1 out of 6 pods).
 - **Native Limitation**: Native Kubernetes has limited control over exact traffic percentages. You cannot easily route exactly 1% of traffic unless you have at least 100 pods in total. For granular control (e.g., 1% vs 99% split with only 2 pods), you would need a service mesh like **Istio**.
+
+# Jobs and Cron Jobs
+
+Kubernetes handles 2 main types of workloads:
+
+- **long-running services** (like web servers).
+- **batch processing tasks** (like generating reports or processing images).
+
+## Jobs
+
+- **Purpose**: Unlike standard Pods that are meant to run forever, a `Job` is designed to run a specific task to completion and then stop.
+- **The Restart Policy**: By default, Kubernetes Pods have a `restartPolicy: Always`, meaning they will keep restarting even after finishing a task. For Jobs, you **must override this** by setting the `restartPolicy` to either `Never` or `OnFailure`.
+- **Key Job Configurations**:
+  - `completions`: Use this to specify how many times the Pod must finish successfully before the Job is considered done.
+  - `parallelism`: This determines how many Pods can run at the same time. If set to 3, the Job will attempt to run 3 Pods simultaneously.
+  - **Management**: If a Pod fails, the Job controller is "intelligent enough" to create new Pods until the required number of successful completions is reached.
+  - `backoffLimit`: maximum number of times Kubernetes will **retry failed Pods** before considering the Job as failed. The default number value is `backoffLimit: 6` (if not specified).
+
+```yaml
+spec:
+  completions: 3 # 3 successful pod completions are required
+  parallelism: 3 # up to 3 pods can run at the same time
+  backoffLimit: 20 # at most 20 pod failures are allowed before the Job fails
+```
+
+## CronJobs
+
+- **Purpose**: A `CronJob` is simply a `Job` that runs on a **periodic schedule**, similar to a Linux Crontab.
+- **Structure**: A `CronJob` definition is more complex because it contains **3 nested "spec" sections**:
+  1. A spec for the `CronJob` itself (the schedule).
+  2. A template spec for the `Job` it creates.
+  3. A template spec for the `Pod` that performs the work.
+
+```yaml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: reporting-cron-job
+spec: # cron job spec
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec: # job spec
+      completions: 3
+      parallelism: 3
+      template:
+        spec: # pod spec
+          containers:
+            - name: reporting-tool
+              image: reporting-tool
+          restartPolicy: Never
+```
+
+- **Schedule Format**: Use a standard cron-like string (e.g., `* * * * *`) to tell Kubernetes exactly when the task should run.
+
