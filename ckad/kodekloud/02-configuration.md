@@ -103,6 +103,16 @@
 - `ENTRYPOINT`: This defines the permanent executable. Anything you type at the end of the `docker run` command will be **appended** to the entry point rather than replacing it.
 - **Best Practice**: Use `ENTRYPOINT` for the main command (like `sleep`) and `CMD` for the default parameter (like 5 seconds). This allows users to easily change the parameter without re-typing the whole command.
 
+```dockerfile
+# Dockerfile
+FROM ubuntu
+ENTRYPOINT ["sleep"]
+CMD ["5"]
+
+# docker run my-image     --> "sleep 5"
+# docker run my-image 10  --> "sleep 10"
+```
+
 # Docker Commands, Entrypoints and Arguments
 
 ## The Purpose of a Container
@@ -134,6 +144,11 @@ CMD [ "5" ]
 - **How it Works**: In this setup, `ENTRYPOINT` defines the program (e.g., sleep) and `CMD` provides the **default arguments** (e.g., 5). If the user provides no input, it runs `sleep 5`. If the user provides `10`, it runs `sleep 10`.
 - **Override Flag**: If you need to change the actual executable at runtime (e.g., changing `sleep` to something else), you must use the `--entrypoint` flag in your command.
 
+```sh
+docker run --entrypoint echo ubuntu "Hello Leon"
+# Output: Hello Leon
+```
+
 ## Syntax requirements
 
 - **JSON Format**: For `ENTRYPOINT` and `CMD` to work together correctly, they should be written in **JSON array format**.
@@ -146,6 +161,16 @@ CMD [ "5" ]
 - **Property Mapping**: When moving from Docker to Kubernetes, the names of the instructions change. It is important to remember that:
   - The `command` field in Kubernetes overrides the `ENTRYPOINT` instruction in a Dockerfile.
   - The `args` field in Kubernetes overrides the `CMD` instruction in a Dockerfile.
+
+```yaml
+# k8s manifest example:
+spec:
+  containers:
+  - name: my-container
+    image: my-image
+    command: ["echo"]        # Overrides ENTRYPOINT ["sleep"]
+    args: ["Hello K8s"]      # Overrides CMD ["5"]
+```
 
 ## Using the `args` field
 
@@ -271,10 +296,23 @@ Once a Secret exists in the cluster, you can provide it to your application in m
 
 - **Environment Variables**: Use the `envFrom` property in the Pod definition to load all keys from a Secret as environment variables.
 - **Volume Mounts**: You can mount a Secret as a **volume**. In this case, Kubernetes creates a directory where **each key in the Secret becomes a file**, and the content of that file is the secret value.
+  - FYI only (not needed for CKAD) - Volume mount process:
+    1. etcd (Database): Holds the master secret file securely.
+    2. Node RAM (tmpfs): When a Pod starts, kubelet downloads the secret from etcd and places it directly into the server's RAM as files.
+    3. The App: Reads the files from RAM instantly. No network calls, no disk lag.
+    4. Crash Recovery: If the server dies, RAM clears, but K8s immediately recreates the Pod and the RAM files on a fresh server.
 
 <p align="center">
     <img src="./diagrams/02/02-secrets-in-pods-as-volumes.png" width="50%">
 </p>
+
+- Volume Mounts are generally better than environment variables for security and flexibility reasons.
+
+| Feature | Environment Variables (`envFrom`) | Volume Mounts (`volumeMounts`) | Winner |
+| :--- | :--- | :--- | :--- |
+| **Hot-Reloading** | ❌ Requires a **Pod restart** to update values. |  Automatically updates the files in real-time, `kubelet` watches for changes on `etcd`, but app code need to periodically read the secret, not just on startup, so need a watcher. | **Volume Mounts** |
+| **Security (Leaking)** | ❌ High risk. Easily leaked via logs, crash dumps, or `env` commands. |  Low risk. Scoped strictly to a hidden file path. | **Volume Mounts** |
+| **Simplicity** |  Super easy for apps to read natively. | ⚠️ Requires code to read data from a file path. | **Environment Variables** |
 
 ## Security Best Practices
 
@@ -284,6 +322,27 @@ Because Base64 encoding is easily broken, Kubernetes employs several internal me
 - **Memory-Only Storage**: Kubernetes stores Secrets in `tmpfs` (RAM) on the nodes, ensuring sensitive data is **never written to a physical disk storage**.
 - **Automatic Detection**: Once a Pod depending on a Secret is deleted, the local copy of that Secret on the node is also wiped.
 - Avoid checking Secret YAML files into source code repositories like GitHub and enable **Encryption at Rest** so that Secrets are encrypted while stored in ETCD. For even high security, consider external tools like **HashiCorp Vault**.
+
+---
+### Encryption at REST (Flow)
+
+```
+1. USER CREATES SECRET 
+   [Password] (Base64) 
+        |
+        v
+2. KUBERNETES API SERVER 
+   Intercepts the secret, then reaches out to an external Key Management Service (KMS).
+        |
+        v
+3. KEY MANAGEMENT SERVICE (AWS KMS / Google KMS / HashiCorp Vault)
+   Generates or uses a Key Encryption Key (KEK) to scramble the secret data.
+        |
+        v
+4. ENCRYPTED STORAGE (etcd)
+   The secret is written to the database as unreadable ciphertext.
+```
+---
 
 # Docker Security and Process Isolation
 
@@ -298,6 +357,27 @@ Understanding how Docker handles security and isolation on a single host.
 - **Shared Kernel**: Unlike virtual machines, containers are **not completely isolated** from their host; they share the same underlying operating system kernel.
 - **Namespaces**: Docker uses a Linux feature called **namespaces** to create isolation. While the host has its own namespace, each container is tucked away in its own private namespace.
 - **Process Visibility**: From inside a container, a process (like a "sleep" command) might appear to have a **Process ID (PID)** of 1. However, on the Docker host, that same process is visible but will have a **different PID**, as the host sees all processes across the entire system.
+
+```sh
++--------------------------------------------------------------+
+|                     LINUX KERNEL                             |
+|                                                              |
+|   Container Namespace View   <=======>   Host Namespace View |
+|         (PID 1)                          (PID 12820)         |
++--------------------------------------------------------------+
+
+# Within Docker container (PID = 1)
+➜  ~ docker run -d --name isolation-test ubuntu sleep 1000
+d9d378a050bc5f082da8da1e53f3fdb0a403b98d42837f0f301d7e3f801e9137
+➜  ~ docker exec -it isolation-test ps aux
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  0.0  0.0   2272  1132 ?        Ss   10:42   0:00 sleep 1000
+root           2  0.0  0.0   7632  3308 pts/0    Rs+  10:42   0:00 ps aux
+
+# Within Host (PID = 12820)
+➜  ~ ps aux | grep "sleep 1000"
+LeonLow          12820   0.0  0.0 410060096     32 s001  S+    6:43PM   0:00.00 grep --color=auto --exclude-dir=.bzr --exclude-dir=CVS --exclude-dir=.git --exclude-dir=.hg --exclude-dir=.svn --exclude-dir=.idea --exclude-dir=.tox --exclude-dir=.venv --exclude-dir=venv sleep 1000
+```
 
 ## User Security and Root Access
 
@@ -334,7 +414,7 @@ Security Contexts in Kubernetes allow you to define **security standards** for y
 ## Key Security Settings
 
 - **User IDs** (`runAsUser`): You can specify the exact **User ID** that the container's processes should use by running the `runAsUser` option. This is a critical security step to ensure processes do not run with unnecessary privileges.
-- **Linux Capabilities**: Using th `capabilities` option, you can **add or remove specific system privileges**. As we previously discussed regarding Docker security, these allow for fine-grained control over what a container can do to the host kernel, such as modifying the system clock or network configuration.
+- **Linux Capabilities**: Using the `capabilities` option, you can **add or remove specific system privileges**. As we previously discussed regarding Docker security, these allow for fine-grained control over what a container can do to the host kernel, such as modifying the system clock or network configuration.
 
 ## Analogy for Understanding
 
@@ -385,7 +465,7 @@ Think of the **Pod-level Security Context** as the **"House Rules"** for an apar
 </p>
 
 - **No Requests, No Limits**
-  - Container can sue lots of resources
+  - Container can use lots of resources
   - Risk: one Pod can **starve** others (bad multi-tenant behavior).
 - **Limits set, Requests not set**
   - Kubernetes automatically sets **request = limit**.
@@ -499,7 +579,7 @@ The way Kubernetes handles tokens has changed to become more secure:
 - **Purpose**: These are used to set **restrictions** on which pods can be scheduled on specific nodes.
 - **Taints** are set on **nodes**, while **tolerations** are set on **pods**.
 - **The Goal**: They ensure that unwanted pods are not placed on specific nodes, allowing you to reserve nodes for particular use cases or applications.
-- **Important Distinction**: Taints and tolerations are **not foe security** or preventing intrusions; they are strictly for scheduling logic.
+- **Important Distinction**: Taints and tolerations are **not for security** or preventing intrusions; they are strictly for scheduling logic.
 
 ## How It Works (Analogy)
 

@@ -37,7 +37,7 @@ kubectl get <resource> -o wide             # extra columns (node/IP/etc)
 kubectl get <resource> -o name             # just resource names (great for scripting)
 ```
 
-# Node 
+# Node
 
 ```sh
 kubectl get nodes
@@ -93,6 +93,9 @@ kubectl get pod webapp -o yaml > new-pod.yaml
 vi new-pod.yaml
 kubectl delete pod webapp       # delete existing pod
 kubectl create -f new-pod.yaml  # create new pod with edited file
+
+# view app logs
+k exec webapp -- cat /log/app.log
 ```
 
 # ReplicationController
@@ -142,6 +145,12 @@ kubectl rollout status deployment/<deployment-name>     # view the status of the
 kubectl rollout history deployment/<deployment-name>    # view revisions of rollout deployment
     kubectl rollout history deployment/<deployment-name> --revision=1 # view status of a specific revision
 kubectl rollout undo deployment/<deployment-name>       # undo a deployment and rollback to previous replicaset version
+
+# Expose a deployment via NodePort service
+# NodePort service name = "webapp-svc", if `--type` not specified, it will be ClusterIP by default
+kubectl expose deployment webapp --name=webapp-svc --type=NodePort --port=80 --target-port=8080 -n dev
+# If you want to configure "nodePort"
+kubectl expose deployment webapp --name=webapp-svc --type=NodePort --port=80 --target-port=8080 -n dev --dry-run=client -o yaml
 ```
 
 # Namespace
@@ -292,4 +301,137 @@ kubectl create job <job-name> --image=<image-name> --dry-run=client -o yaml > jo
 
 kubectl get cronjobs
 kubectl create cronjob <cronjob-name> --image <image-name> --schedule="30 21 * * *" --dry-run=client -o yaml > cronjob.yaml
+```
+
+# Network Policy
+
+```sh
+kubectl get networkpolicies
+kubectl get netpol
+
+kubectl describe pod <podname> | grep -i labels # grep the label of the pod
+```
+
+# Ingress
+
+```sh
+# Ingress Resource
+k get ing
+k get ingress
+
+# Ingress Controller
+kubectl get deploy ingress-nginx-controller -n ingress-nginx -o yaml
+
+# Finding Unmatched Path on INGRESS
+# 1. Check Ingress Resource
+kubectl describe ing -n app-space
+# Look for "Default backend:"
+# - If `Default backend: <service_name>:80`, stop here. Request is forwarded to this service.
+# - If `Default backend: <default>`, Ingress Resource has passed the responsibility to Ingress Controller.
+
+# 2. Check Ingress Controller
+kubectl get deploy <deployment_name> -n ingress-nginx -o yaml | grep -i "default-backend-service"
+# - If `--default-backend-service=namespace/service-name` found, controller routes traffic to that specific cluster sevice.
+    # - E.g., `--default-backend-service=app-space/default-backend-service`
+# - If `--default-backend-service` not found, returns 404 Not Found to client.
+
+# Create Ingress Resource (Imperative command)
+kubectl create ingress <name> -n <namespace> --rule="/pay=pay-service:8282"
+# But need to change rewrite-target annotation as this forwards from `/<ingress-svc>:<ingress-port>/pay` to `http://<svc_name>:<port>/pay` when it should be `http://<svc_name>:<port>/` (after rewrite)
+
+# Multiple rules
+kubectl create ingress <name> -n <namespace> --rule="/pay=pay-service:8282" --rule="/wear=wear-service:8080"
+```
+
+## Ingress Resource Manifest
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: critical-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: / # the path you want to override
+spec:
+  ingressClassName: nginx # ingress controller name (no need namespace, it is cluster-scoped)
+  rules:
+    - http: # ⚠️ No host defined here, "Catch-All" rule displayed as "*" under Host column when kubectl describe
+        paths:
+          - path: /pay
+            pathType: Prefix
+            backend:
+              service:
+                name: pay-service # k get svc
+                port:
+                  number: 8282
+
+    - host: store-my-company.com # bound to this exact domain, best for Production environments
+      http:
+        paths:
+          - path: /wear
+            pathType: prefix
+            backend:
+              service:
+                name: wear-service
+                port:
+                  number: 8080
+```
+
+```yaml
+# Redirect all HTTP requests to HTTPS via Ingress resource
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+```
+
+# Persistent Volume
+
+## Create PV
+
+- Can only use declarative method
+
+```yaml
+# pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-log
+spec:
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: /pv/log
+    type: Directory
+  persistentVolumeReclaimPolicy: Retain
+```
+
+## Create PVC
+
+- Can only use declarative method
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: claim-log-1
+spec:
+  resources:
+    requests:
+      storage: 50Mi
+  accessModes:
+    - ReadWriteOnce
+```
+
+# Storage Class
+
+```sh
+# Verify StorageClass does not support dynamic volume provisioning
+k describe sc local-storage | grep -i provisioner
+# Output:
+# Provisioner:           kubernetes.io/no-provisioner
+# "no-provisioner" means it does not support dynamic volume provisioning
 ```

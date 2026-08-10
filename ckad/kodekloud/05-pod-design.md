@@ -165,12 +165,79 @@ These 2 settings allow you to fine-tune the `RollingUpdate` strategy to balance 
 
 ### Native Implementation Steps
 
-To implement this without advanced tools (like a service mesh), you use 2 **Deployments** and 1 **Service**:
+To implement Canary Deployment natively without advanced tools (like Service Mesh), you use a single Service targeting a **Shared Label** present on the Pods of 2 distinct Deployments. Because Kubernetes routes traffic across all matching pods evenly, you traffic split is controlled entirely by the **ratio of running pods**.
 
-1. **The Primary Deployment**: This is your current stable version (e.g., version V1). It typically runs multiple pods to handle the bulk of your traffic.
-2. **The Canary Deployment**: You create a second, separate deployment using the **new container image** (e.g., version V2).
-3. **The Common Label**: To ensure a single Service can send traffic to both deployments at once, you must give the pods in **both deployments a common label** (for example, `app: front-end`).
-4. **The Service Selector**: You configure your Service's `selector` to match that **common label**. The Service will now automatically discover and route traffic to all pods that carry that label, regardless of which deployment they belong to.
+<img src="./diagrams/05/05-canary-traffic-formula.png" />
+
+1. **Configure the Primary Deployment (V1)**:
+  - Deploy your stable version. The key is to include a **shared label** (`app: front-end`) for the Service to target, and a **unique label** (`version: v1`) for tracking.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-primary
+spec:
+  replicas: 9  # High replica count to dilute canary traffic
+  selector:
+    matchLabels:
+      app: front-end
+  template:
+    metadata:
+      labels:
+        app: front-end     # Shared label (Service target)
+        version: v1        # Unique label (Version identifier)
+    spec:
+      containers:
+      - name: app
+        image: myapp:v1.0
+```
+
+2. **Create the Shared Service**
+  - Create a single Service. Its selector must target **only** the shared label (`app: front-end`). It will ignore the `version` labels entirely.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  selector:
+    app: front-end  # Targets both v1 and v2 pods simultaneously
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+```
+
+3. **Deploy the Canary (V2)**: Create a second, completely separate Deployment running the new version. Keep the replicas low (e.g., `1`) so it only receives a small slice of traffic.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-canary
+spec:
+  replicas: 1  # 1 Canary pod / (9 Primary + 1 Canary) = 10% traffic
+  selector:
+    matchLabels:
+      app: front-end
+  template:
+    metadata:
+      labels:
+        app: front-end     # Shared label (Pulls traffic)
+        version: v2        # Unique label (Tracking)
+    spec:
+      containers:
+      - name: app
+        image: myapp:v2.0  # New version
+```
+
+4. **Promote or Rollback**:
+
+Monitor your metrics. Based on the behavior of the canary pod, execute one of the following:
+- **To Rollback**: Instantly scale the Canary Deployment to `0` replicas. 100% of traffic immediately returns to the Primary.
+- **To Promote**: Scale up the Canary (V2) deployment and scale down the Primary (V1) deployment. Once V2 is at 100%, you can safely delete the V1 deployment.
 
 ### Managing Traffic Split
 
@@ -196,10 +263,21 @@ Kubernetes handles 2 main types of workloads:
   - `backoffLimit`: maximum number of times Kubernetes will **retry failed Pods** before considering the Job as failed. The default number value is `backoffLimit: 6` (if not specified).
 
 ```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: parallel-reporting-job
 spec:
-  completions: 3 # 3 successful pod completions are required
-  parallelism: 3 # up to 3 pods can run at the same time
-  backoffLimit: 20 # at most 20 pod failures are allowed before the Job fails
+  completions: 3      # Kubernetes wants exactly 3 pods to finish successfully
+  parallelism: 3      # Run all 3 pods at the exact same time
+  backoffLimit: 20    # Retry up to 20 times if pods fail/crash
+  template:
+    spec:
+      containers:
+      - name: worker
+        image: busybox:1.36
+        command: ["sh", "-c", "echo 'Processing report chunk...' && sleep 5 && echo 'Done!'"]
+      restartPolicy: Never # Required for Jobs (ensures failed pods are replaced, not indefinitely restarted)
 ```
 
 ## CronJobs
@@ -211,23 +289,32 @@ spec:
   3. A template spec for the `Pod` that performs the work.
 
 ```yaml
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: reporting-cron-job
-spec: # cron job spec
-  schedule: "*/1 * * * *"
+spec:
+  schedule: "*/1 * * * *"  # Runs every single minute
+  concurrencyPolicy: Forbid # Pro-Tip: Prevents a new run if the previous minute's run is still working
+  successfulJobsHistoryLimit: 3 # Keeps the cluster clean by pruning old successful job records
+  failedJobsHistoryLimit: 1
   jobTemplate:
-    spec: # job spec
+    spec:
       completions: 3
       parallelism: 3
       template:
-        spec: # pod spec
+        spec:
           containers:
             - name: reporting-tool
-              image: reporting-tool
+              image: reporting-tool:latest
+              resources:
+                requests:
+                  memory: "64Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "128Mi"
+                  cpu: "500m"
           restartPolicy: Never
 ```
 
 - **Schedule Format**: Use a standard cron-like string (e.g., `* * * * *`) to tell Kubernetes exactly when the task should run.
-

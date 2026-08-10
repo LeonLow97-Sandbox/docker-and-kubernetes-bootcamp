@@ -305,6 +305,18 @@ Think of **Namespaces** like **operating different departments** within the same
 - **Matching**: In the service definition file, you provide a **selector** that matches the **labels** assigned to the pods.
 - **Automatic Updates**: If pods are added or removed, the service automatically updates itself to include or exclude them, making the system highly flexible.
 
+```yaml
+# service-definition.yaml
+spec:
+  selector:
+    app: payment
+
+# pod-definition.yaml
+metadata:
+  labels:
+    app: payment
+```
+
 ## Load Balancing & Multi-Node Support
 
 <p align="center">
