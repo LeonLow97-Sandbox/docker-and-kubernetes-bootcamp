@@ -1,5 +1,4 @@
 - [Question 1: Create Secret from Hardcoded Variables](#question-1-create-secret-from-hardcoded-variables)
-  - [Requirements](#requirements)
 - [Question 2: Create CronJob with Schedule and History Limits](#question-2-create-cronjob-with-schedule-and-history-limits)
 - [Question 3: Create ServiceAccount, Role, and RoleBinding from Logs Error](#question-3-create-serviceaccount-role-and-rolebinding-from-logs-error)
 - [Question 4: Fix Broken Pod with Correct ServiceAccount](#question-4-fix-broken-pod-with-correct-serviceaccount)
